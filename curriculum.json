@@ -1,0 +1,516 @@
+{
+  "modules": [
+    {
+      "id": 1,
+      "title": "Módulo 1: O Esqueleto Fundamental — Seleção (σ) e Projeção (π)",
+      "badge": "Fundamentos",
+      "summary": "Compreenda a ordem de execução do banco de dados, o filtro de linhas (σ) e a escolha de colunas (π), além de toda a família de operadores booleanos, comparações e valores nulos.",
+      "concepts": [
+        {
+          "title": "O Modelo Mental: Relação e Tuplas",
+          "content": "No modelo relacional formulado por Edgar F. Codd, uma **tabela** é uma **relação** (um conjunto de tuplas/linhas sem ordem intrínseca). Cada linha é um registro e cada coluna é um atributo com um domínio (tipo de dado).",
+          "raSymbol": "R",
+          "sqlKeyword": "FROM"
+        },
+        {
+          "title": "Projeção (π) — O Corte Vertical",
+          "content": "A **Projeção** escolhe quais colunas devem aparecer no resultado e descarta as demais. Na AR pura, a projeção elimina tuplas duplicadas resultantes da perda de atributos identificadores. No SQL, `SELECT` projeta as colunas solicitadas (e mantém duplicatas por padrão, a menos que se use `DISTINCT`). Também permite expressões e apelidos (`col * 2 AS dobro`).",
+          "raSymbol": "π_{col1, col2}(R)",
+          "sqlKeyword": "SELECT col1, col2"
+        },
+        {
+          "title": "Seleção (σ) — O Corte Horizontal",
+          "content": "A **Seleção** avalia uma expressão booleana para cada tupla individual da relação. As tuplas que avaliam para VERDADEIRO passam; as demais são descartadas. No SQL, a seleção é expressa na cláusula `WHERE`.",
+          "raSymbol": "σ_{condicao}(R)",
+          "sqlKeyword": "WHERE condicao"
+        },
+        {
+          "title": "A Família de Predicados e Operadores de Filtro",
+          "content": "Para nunca depender de gravar fórmulas, entenda as categorias de operadores de filtro:\n\n1. **Comparações:** `=`, `<>` ou `!=` (diferente), `<`, `<=`, `>`, `>=`\n2. **Conectivos Lógicos:** `AND` (ambos verdadeiros), `OR` (pelo menos um verdadeiro), `NOT` (negação)\n   - *Precedência:* `NOT` tem maior precedência, depois `AND`, depois `OR`. Use parênteses para forçar a ordem desejada!\n3. **Intervalo:** `campo BETWEEN min AND max` (inclusivo, equivalente a `campo >= min AND campo <= max`)\n4. **Conjunto / Pertença:** `campo IN (val1, val2, ...)` (verdadeiro se o campo for igual a qualquer um dos itens)\n5. **Padrões de Texto:** `campo LIKE 'prefix%'` (`%` para zero ou mais caracteres, `_` para exatamente um caractere)\n6. **Tratamento de Nulos:** Em bancos relacionais vigora a **Lógica Tri-Valorada** (Verdadeiro, Falso, Desconhecido/UNKNOWN). A expressão `campo = NULL` **NUNCA** retorna verdadeiro! Deve-se sempre usar `campo IS NULL` ou `campo IS NOT NULL`.",
+          "raSymbol": "σ_{c1 ∧ c2}, σ_{c1 ∨ c2}, σ_{¬c}",
+          "sqlKeyword": "AND, OR, NOT, BETWEEN, IN, LIKE, IS NULL"
+        },
+        {
+          "title": "A Ordem Real de Execução (Mental Pipeline)",
+          "content": "Embora em SQL você escreva `SELECT` primeiro, o motor do banco executa na ordem exata da Álgebra Relacional (de dentro para fora):\n\n1. `FROM` (pega a relação)\n2. `WHERE` (aplica a seleção σ nas linhas)\n3. `SELECT` (aplica a projeção π nas colunas)\n\nPor isso, você nunca pode usar um apelido (alias) criado no `SELECT` dentro do `WHERE` — o `WHERE` é executado antes do `SELECT` existir!",
+          "raSymbol": "π(σ(FROM))",
+          "sqlKeyword": "FROM → WHERE → SELECT"
+        }
+      ],
+      "exercises": [1, 2]
+    },
+    {
+      "id": 2,
+      "title": "Módulo 2: Funções de Agregação (γ) — Resumindo Informações",
+      "badge": "Agregações",
+      "summary": "Aprenda a condensar conjuntos de tuplas em valores escalares estatísticos (MIN, MAX, AVG, SUM, COUNT), a regra de compatibilidade de formas e a precisão numérica.",
+      "concepts": [
+        {
+          "title": "O Operador de Agregação (γ / F)",
+          "content": "Na Álgebra Relacional Estendida, a agregação é representada pela letra grega Gama (γ) ou F caligráfico. Ela recebe um conjunto de tuplas e calcula um único valor escalar sobre um atributo (ex: média, máximo, contagem).",
+          "raSymbol": "γ_{funcao(atributo)}(R)",
+          "sqlKeyword": "SELECT FUNCAO(col) FROM ..."
+        },
+        {
+          "title": "A Família de Funções de Agregação",
+          "content": "As 5 funções fundamentais do padrão ANSI SQL são:\n\n- `COUNT(*)`: Conta o número total de linhas.\n- `COUNT(col)`: Conta o número de linhas onde `col` NÃO é NULL.\n- `COUNT(DISTINCT col)`: Conta quantos valores distintos e não-nulos existem na coluna.\n- `SUM(col)`: Soma aritmética dos valores numéricos.\n- `AVG(col)`: Média aritmética simples (`SUM(col) / COUNT(col)`).\n- `MIN(col)` e `MAX(col)`: Menor e maior valor (funciona para números, strings e datas!).",
+          "raSymbol": "COUNT, SUM, AVG, MIN, MAX",
+          "sqlKeyword": "COUNT, SUM, AVG, MIN, MAX"
+        },
+        {
+          "title": "A Regra de Ouro da Compatibilidade de Formas",
+          "content": "Uma agregação global sem `GROUP BY` colapsa TODAS as linhas da tabela em exatamente UMA única linha.\nPortanto, é um erro conceitual grave escrever:\n`SELECT name, MAX(price) FROM products;`\nPorque `MAX(price)` produz 1 linha, enquanto `name` tem N linhas! O SQL não sabe qual `name` emparelhar com o valor máximo sem uma subconsulta ou agrupamento.",
+          "raSymbol": "γ produz relação 1x1",
+          "sqlKeyword": "Erro comum em agregação"
+        },
+        {
+          "title": "Formatação e Apelidos com Caracteres Especiais",
+          "content": "No Beecrowd e no mundo real, relatórios exigem formatações específicas:\n- **Arredondamento:** `ROUND(expressao, casas)` para fixar a quantidade de casas decimais.\n- **Nomes de Colunas com Espaços ou Parênteses:** Use aspas duplas: `AS \"price (maior)\"` para apelidar colunas que contenham espaços ou pontuações.",
+          "raSymbol": "ρ_{novo_nome}(...)",
+          "sqlKeyword": "ROUND(..., 2), AS \"alias\""
+        }
+      ],
+      "exercises": [3, 4, 5]
+    },
+    {
+      "id": 3,
+      "title": "Módulo 3: Junções (⨝) — Conectando Relações (PK e FK)",
+      "badge": "Relacionamentos",
+      "summary": "Descubra como o Produto Cartesiano (×) somado à Seleção (σ) dá origem à Junção (⨝). Conecte 2 e 3 tabelas usando Chaves Primárias e Estrangeiras sem ambiguidade.",
+      "concepts": [
+        {
+          "title": "A Origem Algébrica da Junção",
+          "content": "Por que o modelo relacional divide dados em tabelas separadas? Para evitar redundância (Normalização).\nMas como unimos de volta?\n1. **Produto Cartesiano (R × S):** Combina cada linha de R com todas as linhas de S (explosão combinatória).\n2. **Theta-Join (R ⨝_θ S):** É o Produto Cartesiano filtrado por uma condição: `σ_θ(R × S)`.\n3. **Equi-Join:** Quando a condição θ é uma igualdade entre chave estrangeira e chave primária: `R ⨝_{R.fk = S.pk} S`.",
+          "raSymbol": "R ⨝_{R.fk = S.pk} S",
+          "sqlKeyword": "FROM R JOIN S ON R.fk = S.pk"
+        },
+        {
+          "title": "Sintaxe ANSI JOIN vs Sintaxe Antiga (Vírgula)",
+          "content": "Existem duas formas em SQL, mas a norma recomendada é a ANSI:\n\n- **ANSI (Moderna & Segura):**\n```sql\nSELECT p.name, c.name\nFROM products p\nJOIN categories c ON p.id_categories = c.id;\n```\n- **Antiga (Baseada em Vírgula no FROM):**\n```sql\nSELECT p.name, c.name\nFROM products p, categories c\nWHERE p.id_categories = c.id;\n```\nA sintaxe ANSI separa com clareza o que é critério de relacionamento (`ON`) do que é filtro negocial de linhas (`WHERE`).",
+          "raSymbol": "R ⨝ S vs σ(R × S)",
+          "sqlKeyword": "INNER JOIN ... ON"
+        },
+        {
+          "title": "Encadeamento de Múltiplas Junções (3 ou mais tabelas)",
+          "content": "Para juntar 3 tabelas (ex: Produtos, Fornecedores e Categorias):\nCada junção adiciona uma tabela ao pipeline:\n\n```sql\nFROM products p\nJOIN providers prov ON p.id_providers = prov.id\nJOIN categories cat ON p.id_categories = cat.id\nWHERE cat.id = 6;\n```\nNa AR, a operação é associativa: `(products ⨝ providers) ⨝ categories`.",
+          "raSymbol": "((A ⨝ B) ⨝ C)",
+          "sqlKeyword": "FROM A JOIN B ON ... JOIN C ON ..."
+        },
+        {
+          "title": "Desambiguação de Atributos",
+          "content": "Quando duas tabelas têm colunas com o mesmo nome (ex: `products.name` e `providers.name`), o banco rejeita `SELECT name` com erro de ambiguidade. Deve-se prefixar com o nome da tabela ou seu apelido: `p.name AS \"name (produto)\", prov.name AS \"name (fornecedor)\"`.",
+          "raSymbol": "p.name, prov.name",
+          "sqlKeyword": "p.name AS ..., c.name AS ..."
+        }
+      ],
+      "exercises": [6, 7, 8, 9, 15]
+    },
+    {
+      "id": 4,
+      "title": "Módulo 4: Agrupamento (G γ F) e Filtros de Grupos (HAVING)",
+      "badge": "Agrupamento",
+      "summary": "Divida tabelas em partições lógicas para calcular métricas por categoria ou departamento. Domine a distinção crucial entre WHERE (pré-grupo) e HAVING (pós-grupo).",
+      "concepts": [
+        {
+          "title": "A Operação de Agrupamento na AR",
+          "content": "Na Álgebra Relacional, a notação completa do operador Gama é:\n\n$$_{G}\\gamma_{F}(R)$$\n\nOnde:\n- **G (Subscrito à esquerda):** O conjunto de atributos de agrupamento (chaves do grupo).\n- **F (Subscrito à direita):** As funções de agregação calculadas para cada grupo.\n\nExemplo: $_{id\\_category}\\gamma_{SUM(amount)}(products)$ divide os produtos em baldes pelo ID da categoria e calcula a soma das quantidades de cada balde.",
+          "raSymbol": "_{G}γ_{F}(R)",
+          "sqlKeyword": "GROUP BY G"
+        },
+        {
+          "title": "A Regra Sagrada do GROUP BY",
+          "content": "Se uma consulta tem `GROUP BY`, qualquer coluna que apareça no `SELECT` deve obrigatoriamente estar:\n1. Presente na lista do `GROUP BY`, OU\n2. Dentro de uma função de agregação (`SUM`, `COUNT`, `AVG`, etc.).\n\nSe você colocar uma coluna que não está no `GROUP BY` e não está agregada, o banco não tem como saber qual valor individual escolher dentre as tuplas daquele grupo!",
+          "raSymbol": "G ⊆ Atributos Projetados",
+          "sqlKeyword": "Regra de consistência do GROUP BY"
+        },
+        {
+          "title": "O Duelo Definitivo: WHERE vs HAVING",
+          "content": "Esta é a dúvida mais comum em bancos de dados:\n\n| Característica | `WHERE` | `HAVING` |\n| :--- | :--- | :--- |\n| **Quando opera?** | ANTES de agrupar (`FROM → WHERE`) | DEPOIS de agrupar (`GROUP BY → HAVING`) |\n| **O que filtra?** | Linhas/tuplas individuais da tabela | Grupos inteiros formados pelo `GROUP BY` |\n| **Pode usar agregação?** | **NUNCA!** `WHERE SUM(...) > 10` é ERRO de sintaxe | **SIM!** `HAVING COUNT(*) > 2` |\n| Na Álgebra Relacional: | $\\sigma_{cond}(R)$ | $\\sigma_{agg}(_{G}\\gamma_{F}(R))$ |",
+          "raSymbol": "σ no grupo vs σ na tupla",
+          "sqlKeyword": "WHERE vs HAVING"
+        }
+      ],
+      "exercises": [10, 17]
+    },
+    {
+      "id": 5,
+      "title": "Módulo 5: Ordenação (τ), Filtros Temporais (Datas) e Faixas (IN)",
+      "badge": "Ordenação & Datas",
+      "summary": "Controle a ordem de apresentação dos dados com Tau (τ), manipule intervalos cronológicos e faça consultas em lotes de valores discretos.",
+      "concepts": [
+        {
+          "title": "O Operador Tau (τ) — Ordenação",
+          "content": "Relações matemáticas são conjuntos não-ordenados. A operação de ordenar não muda os elementos do conjunto, apenas sua representação visual. Na AR Estendida, usamos a letra grega Tau (τ):\n\n$$\\tau_{coluna\\ [ASC|DESC]}(R)$$\n\nNo SQL: `ORDER BY coluna ASC` (padrão crescente) ou `DESC` (decrescente).",
+          "raSymbol": "τ_{colunas}(R)",
+          "sqlKeyword": "ORDER BY"
+        },
+        {
+          "title": "Manipulação de Datas em SQL",
+          "content": "No padrão SQL (ISO 8601), datas são representadas no formato `'AAAA-MM-DD'`.\nPara filtrar intervalos temporais:\n- **Comparações diretas:** `rentals_date >= '2016-09-01' AND rentals_date <= '2016-09-30'`\n- **Funções de extração (Postgres/ANSI):** `EXTRACT(MONTH FROM date) = 9 AND EXTRACT(YEAR FROM date) = 2016`\n- **Funções SQLite:** `strftime('%Y-%m', date) = '2016-09'`\nEm bancos de alto desempenho, comparações diretas de intervalo (`>=` e `<=`) são preferidas pois permitem o uso eficiente de índices B-Tree!",
+          "raSymbol": "σ_{data \\ge d1 ∧ data \\le d2}",
+          "sqlKeyword": "EXTRACT, BETWEEN, >= e <="
+        },
+        {
+          "title": "Filtros por Conjunto com o Operador IN",
+          "content": "Ao invés de encadear múltiplos `OR` (`id = 1 OR id = 2 OR id = 3 OR id = 6 OR id = 9`), o SQL oferece a sintaxe elegante e performática:\n`WHERE id_categories IN (1, 2, 3, 6, 9)`\nNa AR, isso é uma seleção com disjunção: $\\sigma_{id \\in \\{1,2,3,6,9\\}}(R)$.",
+          "raSymbol": "σ_{attr ∈ {v1, v2, ...}}",
+          "sqlKeyword": "IN (v1, v2, ...)"
+        }
+      ],
+      "exercises": [11, 12, 16]
+    },
+    {
+      "id": 6,
+      "title": "Módulo 6: Teoria dos Conjuntos — Anti-Junção (—), União e Moda Estatística",
+      "badge": "Conjuntos Avançados",
+      "summary": "Aprenda a encontrar tuplas que NÃO se relacionam com outra tabela (Anti-Junção / Diferença), empilhar resultados com UNION ALL e calcular modas de frequência com LIMIT.",
+      "concepts": [
+        {
+          "title": "A Anti-Junção (Diferença de Conjuntos)",
+          "content": "Como encontrar registros de A que NÃO existem em B (ex: Clientes que NUNCA alugaram filme)?\nNa Álgebra Relacional, essa é a **Diferença de Conjuntos** ($A - B$) ou **Anti-Semi-Join** ($A \\triangleright B$).\n\nNo SQL existem 3 padrões de escrita:\n\n1. **LEFT JOIN + IS NULL (O mais idiomático):**\n```sql\nSELECT c.id, c.name\nFROM customers c\nLEFT JOIN locations l ON c.id = l.id_customers\nWHERE l.id IS NULL;\n```\nO `LEFT JOIN` preserva todos os clientes. Se não houver aluguel, as colunas de `locations` viram `NULL`. O `WHERE l.id IS NULL` filtra exatamente quem não tem registro!\n\n2. **NOT EXISTS (Muito eficiente em subconsultas):**\n```sql\nSELECT c.id, c.name\nFROM customers c\nWHERE NOT EXISTS (SELECT 1 FROM locations l WHERE l.id_customers = c.id);\n```\n\n3. **NOT IN (Cuidado com NULLs!):**\n`WHERE c.id NOT IN (SELECT id_customers FROM locations)` — Se houver qualquer `NULL` no resultado interno, o `NOT IN` falha devido à lógica tri-valorada!",
+          "raSymbol": "A ▷ B ou A - π(B)",
+          "sqlKeyword": "LEFT JOIN ... WHERE IS NULL"
+        },
+        {
+          "title": "União de Conjuntos (UNION vs UNION ALL)",
+          "content": "A união combina verticalmente as linhas retornadas por duas ou mais consultas com mesmo número e tipo de colunas:\n- `UNION`: Realiza uma ordenação para remover linhas duplicadas.\n- `UNION ALL`: Apenas concatena as linhas (muito mais rápido, preserva duplicatas e ordens deliberadas).\nPodemos usar valores literais em subconsultas: `SELECT 'Average', AVG(val) FROM ...`.",
+          "raSymbol": "R ∪ S",
+          "sqlKeyword": "UNION ALL"
+        },
+        {
+          "title": "Calculando a Moda Estatística (Valor Mais Frequente)",
+          "content": "Como encontrar o elemento que mais se repete sem funções de janela complexas?\n1. Agrupe pelo valor (`GROUP BY amount`).\n2. Conte a frequência de cada grupo (`COUNT(*)`).\n3. Ordene da maior frequência para a menor (`ORDER BY COUNT(*) DESC`).\n4. Pegue apenas o topo da lista (`LIMIT 1`).",
+          "raSymbol": "π_{val}(τ_{cnt DESC}(LIMIT 1 (_{val}γ_{COUNT(*)}(R))))",
+          "sqlKeyword": "GROUP BY ... ORDER BY COUNT(*) DESC LIMIT 1"
+        }
+      ],
+      "exercises": [13, 14, 18]
+    },
+    {
+      "id": 7,
+      "title": "Módulo 7: Lógica Condicional (CASE WHEN) e Estatísticas Multitabelas",
+      "badge": "Maestria SQL",
+      "summary": "Transforme valores com CASE WHEN (if-else relacional), unifique múltiplas perspectivas de um mesmo evento (jogos de futebol) e processe folhas de pagamento com múltiplos vencimentos e descontos.",
+      "concepts": [
+        {
+          "title": "Expressão Condicional CASE WHEN",
+          "content": "O `CASE WHEN` é a estrutura de controle condicional do SQL. Ele é uma expressão escalar que pode ser usada dentro de `SELECT`, `WHERE` ou dentro de agregações (`SUM(CASE WHEN ... THEN 1 ELSE 0 END)`).\n\n```sql\nCASE\n  WHEN team_1_goals > team_2_goals THEN 3\n  WHEN team_1_goals = team_2_goals THEN 1\n  ELSE 0\nEND AS pontos\n```",
+          "raSymbol": "π_{CASE ...}(R)",
+          "sqlKeyword": "CASE WHEN ... THEN ... ELSE ... END"
+        },
+        {
+          "title": "A Técnica da Dupla Perspectiva (Unpivot com UNION ALL)",
+          "content": "Quando um mesmo evento envolve duas entidades de forma simétrica (como uma partida de futebol entre Time 1 e Time 2):\nPara calcular as estatísticas de cada time, precisamos ver cada partida sob a perspectiva do Time 1 e sob a perspectiva do Time 2.\nUsamos `UNION ALL` para unir as duas visões antes de fazer o `GROUP BY` final!",
+          "raSymbol": "(Partidas como Casa) ∪ (Partidas como Fora)",
+          "sqlKeyword": "SELECT Casa ... UNION ALL SELECT Fora ..."
+        },
+        {
+          "title": "Tratamento Robusto de Nulos com COALESCE",
+          "content": "`COALESCE(valor, substituto)` retorna o primeiro argumento não-nulo da lista.\nÉ essencial quando funcionários não possuem determinados vencimentos ou descontos: sem o `COALESCE`, qualquer operação aritmética com `NULL` resulta em `NULL` (`1000 - NULL = NULL`)! Com `COALESCE(desconto, 0)`, garantimos que `1000 - 0 = 1000`.",
+          "raSymbol": "Substituição de nulo",
+          "sqlKeyword": "COALESCE(val, 0)"
+        }
+      ],
+      "exercises": [19, 20]
+    }
+  ],
+  "assignmentExercises": {
+    "1": {
+      "beecrowd": "2602",
+      "title": "Clientes por Estado",
+      "moduleId": 1,
+      "difficulty": "Iniciante",
+      "statement": "Sua empresa está fazendo um levantamento de quantos clientes estão cadastrados em cada estado, porém os dados do estado do Rio Grande do Sul não puderam ser levantados. Mostre os nomes de todos os clientes cujo estado seja 'RS'.",
+      "pedagogicalIntuition": "Você precisa de um filtro de linha (onde state = 'RS') e de um filtro de coluna (apenas name). Primeiro identifique a tabela de partida no FROM, filtre com WHERE e projete com SELECT.",
+      "raExpression": "π_{name}(σ_{state = 'RS'}(customers))",
+      "raBreakdown": [
+        {"operator": "customers", "role": "Relação base contendo todos os clientes cadastrados."},
+        {"operator": "σ_{state = 'RS'}", "role": "Seleção que filtra apenas as tuplas onde o atributo state é igual a 'RS'."},
+        {"operator": "π_{name}", "role": "Projeção que extrai apenas a coluna name das tuplas filtradas."}
+      ],
+      "solutionSql": "SELECT name\nFROM customers\nWHERE state = 'RS';"
+    },
+    "2": {
+      "beecrowd": "2604",
+      "title": "Under 10 or Greater Than 100",
+      "moduleId": 1,
+      "difficulty": "Iniciante",
+      "statement": "O setor financeiro da empresa precisa de um relatório que mostre o ID e o nome dos produtos cujo preço seja menor que 10 ou maior que 100.",
+      "pedagogicalIntuition": "Aqui temos uma condição disjuntiva (OR). O produto passa se satisfizer price < 10 OU price > 100. As colunas pedidas são id e name.",
+      "raExpression": "π_{id, name}(σ_{price < 10 ∨ price > 100}(products))",
+      "raBreakdown": [
+        {"operator": "products", "role": "Relação base com informações de estoque e preços."},
+        {"operator": "σ_{price < 10 ∨ price > 100}", "role": "Seleção com conectivo lógico 'OU' (∨) que captura itens muito baratos ou muito caros."},
+        {"operator": "π_{id, name}", "role": "Projeção que descarta amount e price, mantendo id e name."}
+      ],
+      "solutionSql": "SELECT id, name\nFROM products\nWHERE price < 10 OR price > 100;"
+    },
+    "3": {
+      "beecrowd": "2608",
+      "title": "Higher and Lower Price",
+      "moduleId": 2,
+      "difficulty": "Iniciante",
+      "statement": "O setor financeiro da empresa quer saber os valores menor e maior dos produtos que vendemos. Para isso, exiba apenas o maior e o menor preço da tabela de produtos.",
+      "pedagogicalIntuition": "Ambas as funções de agregação (MAX e MIN) podem ser chamadas na mesma consulta sobre a tabela toda. Preste muita atenção aos nomes exatos das colunas de saída pedidos no Output Sample: \"price (maior)\" e \"price (menor)\". Use aspas duplas no apelido!",
+      "raExpression": "γ_{MAX(price) \\to \\text{\"price (maior)\"}, MIN(price) \\to \\text{\"price (menor)\"}}(products)",
+      "raBreakdown": [
+        {"operator": "products", "role": "Relação de entrada."},
+        {"operator": "γ_{MAX(price), MIN(price)}", "role": "Operador de agregação global que colapsa todas as linhas e computa os valores extremos."}
+      ],
+      "solutionSql": "SELECT MAX(price) AS \"price (maior)\", MIN(price) AS \"price (menor)\"\nFROM products;"
+    },
+    "4": {
+      "beecrowd": "2610",
+      "title": "Average Value of Products",
+      "moduleId": 2,
+      "difficulty": "Iniciante",
+      "statement": "Está sendo feito um levantamento sobre os valores dos produtos comercializados. Calcule e exiba o valor médio do preço dos produtos. Obs: mostre o valor com duas casas decimais.",
+      "pedagogicalIntuition": "Use a função de média AVG(price) e envolva-a na função de arredondamento ROUND(..., 2). A coluna resultante deve se chamar price.",
+      "raExpression": "γ_{ROUND(AVG(price), 2) \\to price}(products)",
+      "raBreakdown": [
+        {"operator": "products", "role": "Relação de entrada."},
+        {"operator": "γ_{ROUND(AVG(price), 2)}", "role": "Calcula a média de preços e formata com duas casas decimais."}
+      ],
+      "solutionSql": "SELECT ROUND(AVG(price), 2) AS price\nFROM products;"
+    },
+    "5": {
+      "beecrowd": "2624",
+      "title": "Number of Cities per Customers",
+      "moduleId": 2,
+      "difficulty": "Iniciante",
+      "statement": "A diretoria da empresa pediu um relatório simples sobre quantas cidades a empresa já alcançou. Exiba o número de cidades distintas na tabela de clientes.",
+      "pedagogicalIntuition": "Se vários clientes moram em 'Porto Alegre', essa cidade deve ser contada apenas uma vez. Use COUNT(DISTINCT city) e apelide como count.",
+      "raExpression": "γ_{COUNT(\\text{DISTINCT } city) \\to count}(customers)",
+      "raBreakdown": [
+        {"operator": "customers", "role": "Relação de clientes."},
+        {"operator": "COUNT(DISTINCT city)", "role": "Elimina cidades duplicadas antes de efetuar a contagem escalar."}
+      ],
+      "solutionSql": "SELECT COUNT(DISTINCT city) AS count\nFROM customers;"
+    },
+    "6": {
+      "beecrowd": "2622",
+      "title": "Legal Person",
+      "moduleId": 3,
+      "difficulty": "Intermediário",
+      "statement": "O setor de vendas quer fazer uma promoção para todos os clientes que são pessoas jurídicas. Exiba o nome dos clientes que são pessoa jurídica.",
+      "pedagogicalIntuition": "A tabela legal_person guarda as chaves dos clientes que são PJ (id_customers). Faça uma junção (INNER JOIN) entre customers e legal_person ligando customers.id = legal_person.id_customers.",
+      "raExpression": "π_{name}(customers ⨝_{customers.id = legal_person.id_customers} legal_person)",
+      "raBreakdown": [
+        {"operator": "customers ⨝ legal_person", "role": "Equi-junção ligando a chave primária da pessoa à chave estrangeira da tabela de PJ."},
+        {"operator": "π_{name}", "role": "Projeta apenas o atributo name do cliente."}
+      ],
+      "solutionSql": "SELECT c.name\nFROM customers c\nJOIN legal_person lp ON c.id = lp.id_customers;"
+    },
+    "7": {
+      "beecrowd": "2605",
+      "title": "Executive Representatives",
+      "moduleId": 3,
+      "difficulty": "Intermediário",
+      "statement": "O setor financeiro precisa de um relatório sobre os fornecedores dos produtos que vendemos. Os relatórios incluem todas as categorias, mas por algum motivo os fornecedores de produtos cuja categoria é a executiva não estão no relatório. Sua tarefa é retornar os nomes dos produtos e dos fornecedores cujo ID de categoria é 6.",
+      "pedagogicalIntuition": "Junte products com providers através de id_providers = providers.id. Como o filtro é especificamente id_categories = 6, filtre com WHERE p.id_categories = 6. Apelide as colunas com \"name (produto)\" e \"name (fornecedor)\".",
+      "raExpression": "π_{products.name \\to \\text{\"name (produto)\"}, providers.name \\to \\text{\"name (fornecedor)\"}}(\\sigma_{products.id\\_categories = 6}(products ⨝_{products.id\\_providers = providers.id} providers))",
+      "raBreakdown": [
+        {"operator": "products ⨝ providers", "role": "Equi-junção associando o produto ao seu fornecedor."},
+        {"operator": "σ_{id_categories = 6}", "role": "Filtra apenas produtos que pertencem à categoria de id 6."},
+        {"operator": "π com renomeação", "role": "Extrai e apelida os nomes correspondentes para o formato do relatório."}
+      ],
+      "solutionSql": "SELECT p.name AS \"name (produto)\", pr.name AS \"name (fornecedor)\"\nFROM products p\nJOIN providers pr ON p.id_providers = pr.id\nWHERE p.id_categories = 6;"
+    },
+    "8": {
+      "beecrowd": "2611",
+      "title": "Action Movies",
+      "moduleId": 3,
+      "difficulty": "Intermediário",
+      "statement": "Uma locadora de vídeos contratou seus serviços para catalogar os filmes. É preciso selecionar o código e o nome dos filmes cuja descrição do gênero seja 'Action'.",
+      "pedagogicalIntuition": "Junte movies e genres pela chave do gênero (movies.id_genres = genres.id). Aplique o filtro de texto genres.description = 'Action'.",
+      "raExpression": "π_{movies.id, movies.name}(σ_{genres.description = 'Action'}(movies ⨝_{movies.id\\_genres = genres.id} genres))",
+      "raBreakdown": [
+        {"operator": "movies ⨝ genres", "role": "Junção entre catálogo de filmes e catálogo de gêneros."},
+        {"operator": "σ_{description = 'Action'}", "role": "Filtro pelo nome descritivo do gênero."},
+        {"operator": "π_{movies.id, movies.name}", "role": "Projeção do identificador e do título do filme."}
+      ],
+      "solutionSql": "SELECT m.id, m.name\nFROM movies m\nJOIN genres g ON m.id_genres = g.id\nWHERE g.description = 'Action';"
+    },
+    "9": {
+      "beecrowd": "2617",
+      "title": "Provider Ajax SA",
+      "moduleId": 3,
+      "difficulty": "Intermediário",
+      "statement": "O setor financeiro encontrou problemas na entrega de um dos fornecedores: a entrega dos produtos não corresponde à nota fiscal. Exiba o nome dos produtos e o nome do fornecedor, para os produtos fornecidos pelo fornecedor 'Ajax SA'.",
+      "pedagogicalIntuition": "Junte products e providers por id_providers = providers.id. Filtre por providers.name = 'Ajax SA'. Renomeie as colunas como \"name (produto)\" e \"name (fornecedor)\".",
+      "raExpression": "π_{products.name \\to \\text{\"name (produto)\"}, providers.name \\to \\text{\"name (fornecedor)\"}}(\\sigma_{providers.name = 'Ajax SA'}(products ⨝_{products.id\\_providers = providers.id} providers))",
+      "raBreakdown": [
+        {"operator": "products ⨝ providers", "role": "Junção relacionando produtos aos seus respectivos fabricantes/fornecedores."},
+        {"operator": "σ_{providers.name = 'Ajax SA'}", "role": "Filtro de fornecedor específico."},
+        {"operator": "π com renomeação", "role": "Formatação exigida pelo Beecrowd."}
+      ],
+      "solutionSql": "SELECT p.name AS \"name (produto)\", pr.name AS \"name (fornecedor)\"\nFROM products p\nJOIN providers pr ON p.id_providers = pr.id\nWHERE pr.name = 'Ajax SA';"
+    },
+    "10": {
+      "beecrowd": "2609",
+      "title": "Products by Categories",
+      "moduleId": 4,
+      "difficulty": "Intermediário",
+      "statement": "O setor de vendas está fazendo uma análise de quantos produtos temos em estoque. Exiba o nome e a soma da quantidade (amount) dos produtos de cada categoria.",
+      "pedagogicalIntuition": "Aqui unimos duas técnicas: JUNÇÃO (para pegar o nome da categoria) e GROUP BY (para agrupar os produtos por categoria). No SELECT colocamos c.name e SUM(p.amount) AS sum.",
+      "raExpression": "_{categories.name}\\gamma_{SUM(products.amount) \\to sum}(products ⨝_{products.id\\_categories = categories.id} categories)",
+      "raBreakdown": [
+        {"operator": "products ⨝ categories", "role": "Junção trazendo a descrição de cada categoria."},
+        {"operator": "_{categories.name}γ_{SUM(amount)}", "role": "Operador gama de agrupamento: divide em grupos pelo nome da categoria e soma os estoques."}
+      ],
+      "solutionSql": "SELECT c.name, SUM(p.amount) AS sum\nFROM products p\nJOIN categories c ON p.id_categories = c.id\nGROUP BY c.name;"
+    },
+    "11": {
+      "beecrowd": "2614",
+      "title": "September Rentals",
+      "moduleId": 5,
+      "difficulty": "Intermediário",
+      "statement": "A locadora de vídeos está fazendo seu relatório semestral. Selecione o nome dos clientes e a data do aluguel, referentes aos aluguéis feitos em setembro de 2016.",
+      "pedagogicalIntuition": "Junte customers com rentals (c.id = r.id_customers). Filtre aluguéis de setembro de 2016 com intervalo de datas: rentals_date >= '2016-09-01' AND rentals_date <= '2016-09-30'.",
+      "raExpression": "π_{customers.name, rentals.rentals\\_date}(\\sigma_{rentals\\_date \\ge '2016-09-01' \\land rentals\\_date \\le '2016-09-30'}(customers ⨝_{customers.id = rentals.id\\_customers} rentals))",
+      "raBreakdown": [
+        {"operator": "customers ⨝ rentals", "role": "Junção entre o cliente e as locações efetuadas."},
+        {"operator": "σ_{data no mês de 09/2016}", "role": "Filtro temporal preciso."},
+        {"operator": "π_{name, rentals_date}", "role": "Projeta nome do locatário e timestamp do aluguel."}
+      ],
+      "solutionSql": "SELECT c.name, r.rentals_date\nFROM customers c\nJOIN rentals r ON c.id = r.id_customers\nWHERE r.rentals_date >= '2016-09-01' AND r.rentals_date <= '2016-09-30';"
+    },
+    "12": {
+      "beecrowd": "2620",
+      "title": "Orders in First Half",
+      "moduleId": 5,
+      "difficulty": "Intermediário",
+      "statement": "A auditoria financeira da empresa está pedindo um relatório referente ao primeiro semestre de 2016. Exiba o nome dos clientes e o número do pedido, para os clientes que fizeram pedidos no primeiro semestre de 2016.",
+      "pedagogicalIntuition": "Primeiro semestre de 2016 vai de 2016-01-01 a 2016-06-30. Junte customers com orders e renomeie o orders.id como \"id (pedido)\".",
+      "raExpression": "π_{customers.name, orders.id \\to \\text{\"id (pedido)\"}}(\\sigma_{orders\\_date \\ge '2016-01-01' \\land orders\\_date \\le '2016-06-30'}(customers ⨝_{customers.id = orders.id\\_customers} orders))",
+      "raBreakdown": [
+        {"operator": "customers ⨝ orders", "role": "Junção de clientes e seus pedidos de compra."},
+        {"operator": "σ_{semestre 1 de 2016}", "role": "Filtro temporal do semestre."},
+        {"operator": "π com renomeação", "role": "Extrai o nome do comprador e o identificador do pedido."}
+      ],
+      "solutionSql": "SELECT c.name, o.id AS \"id (pedido)\"\nFROM customers c\nJOIN orders o ON c.id = o.id_customers\nWHERE o.orders_date >= '2016-01-01' AND o.orders_date <= '2016-06-30';"
+    },
+    "13": {
+      "beecrowd": "2737",
+      "title": "Lawyers",
+      "moduleId": 6,
+      "difficulty": "Avançado",
+      "statement": "O gerente do escritório Mangojata Lawyers pediu um relatório sobre os advogados atuais. Ele quer que você mostre o nome do advogado com mais clientes, o com menos clientes, e a média de clientes considerando todos os advogados. Atenção: antes de apresentar a média, mostre um campo chamado 'Average' para deixar o relatório mais legível. A média deve ser apresentada como um número inteiro.",
+      "pedagogicalIntuition": "Este exercício exige combinar 3 consultas empilhadas verticalmente com UNION ALL:\n1. O advogado com MAX clientes (ORDER BY customers_number DESC LIMIT 1)\n2. O advogado com MIN clientes (ORDER BY customers_number ASC LIMIT 1)\n3. Uma linha com o texto 'Average' e o valor FLOOR(AVG(customers_number)) ou CAST(AVG(...) AS INT).",
+      "raExpression": "(π_{name, customers\\_number}(\\tau_{customers\\_number \\downarrow}(LIMIT 1 (lawyers)))) ∪ (π_{name, customers\\_number}(\\tau_{customers\\_number \\uparrow}(LIMIT 1 (lawyers)))) ∪ (π_{'Average', CAST(AVG(customers\\_number) \\text{ AS INT})}(lawyers))",
+      "raBreakdown": [
+        {"operator": "Consulta 1 (Max)", "role": "Obtém o advogado com maior volume de clientes via ordenação decrescente e LIMIT 1."},
+        {"operator": "Consulta 2 (Min)", "role": "Obtém o advogado com menor volume de clientes via ordenação crescente e LIMIT 1."},
+        {"operator": "Consulta 3 (Média)", "role": "Calcula a média inteira e gera o rótulo literal 'Average'."},
+        {"operator": "UNION ALL", "role": "Empilha as 3 linhas na sequência correta sem ordenar o conjunto final."}
+      ],
+      "solutionSql": "(SELECT name, customers_number FROM lawyers ORDER BY customers_number DESC LIMIT 1)\nUNION ALL\n(SELECT name, customers_number FROM lawyers ORDER BY customers_number ASC LIMIT 1)\nUNION ALL\n(SELECT 'Average', CAST(AVG(customers_number) AS INTEGER) FROM lawyers);"
+    },
+    "14": {
+      "beecrowd": "2993",
+      "title": "Most Frequent Value",
+      "moduleId": 6,
+      "difficulty": "Intermediário",
+      "statement": "Dada uma tabela de uma única coluna com valores inteiros, qual é o valor mais frequente, ou seja, a moda estatística dos valores?",
+      "pedagogicalIntuition": "Agrupe por amount, conte as ocorrências com COUNT(*), ordene de forma decrescente pela contagem e pegue apenas o primeiro com LIMIT 1. Renomeie a coluna como most_frequent_value.",
+      "raExpression": "π_{amount \\to most\\_frequent\\_value}(\\tau_{count \\downarrow}(LIMIT 1 (_{amount}\\gamma_{COUNT(*) \\to count}(value\\_table))))",
+      "raBreakdown": [
+        {"operator": "_{amount}γ_{COUNT(*)}", "role": "Calcula a frequência absoluta de cada número presente na tabela."},
+        {"operator": "τ_{COUNT(*) DESC}", "role": "Ordena da frequência mais alta para a mais baixa."},
+        {"operator": "LIMIT 1", "role": "Extrai o valor de frequência máxima (moda estatística)."}
+      ],
+      "solutionSql": "SELECT amount AS most_frequent_value\nFROM value_table\nGROUP BY amount\nORDER BY COUNT(*) DESC\nLIMIT 1;"
+    },
+    "15": {
+      "beecrowd": "2618",
+      "title": "Imported Products",
+      "moduleId": 3,
+      "difficulty": "Intermediário",
+      "statement": "O setor de importação precisa de um relatório sobre a importação de produtos do fornecedor Sansul. Exiba o nome do produto, o nome do fornecedor e o nome da categoria, para os produtos fornecidos pelo fornecedor 'Sansul SA' e cuja categoria seja 'Imported'.",
+      "pedagogicalIntuition": "Junte products com providers e com categories. Adicione duas condições no WHERE unidas por AND: pr.name = 'Sansul SA' AND c.name = 'Imported'.",
+      "raExpression": "π_{products.name \\to \\text{\"name (produto)\"}, providers.name \\to \\text{\"name (fornecedor)\"}, categories.name \\to \\text{\"name (categoria)\"}}(\\sigma_{providers.name = 'Sansul SA' \\land categories.name = 'Imported'}((products ⨝ providers) ⨝ categories))",
+      "raBreakdown": [
+        {"operator": "(products ⨝ providers) ⨝ categories", "role": "Junção tripla relacionando produto, seu provedor e sua categoria correspondente."},
+        {"operator": "σ_{fornecedor e categoria específicos}", "role": "Filtro booleano composto com conectivo E (∧)."},
+        {"operator": "π com apelidos", "role": "Formata a saída exatamente com os cabeçalhos solicitados."}
+      ],
+      "solutionSql": "SELECT p.name AS \"name (produto)\", pr.name AS \"name (fornecedor)\", c.name AS \"name (categoria)\"\nFROM products p\nJOIN providers pr ON p.id_providers = pr.id\nJOIN categories c ON p.id_categories = c.id\nWHERE pr.name = 'Sansul SA' AND c.name = 'Imported';"
+    },
+    "16": {
+      "beecrowd": "2623",
+      "title": "Categories with Various Products",
+      "moduleId": 5,
+      "difficulty": "Intermediário",
+      "statement": "O setor de vendas precisa de um relatório para saber quais produtos ainda estão em estoque. Exiba o nome do produto e o nome da categoria, para produtos cuja quantidade (amount) seja maior que 100 e cujo ID de categoria seja 1, 2, 3, 6 ou 9. Mostre os resultados em ordem crescente pelo ID da categoria.",
+      "pedagogicalIntuition": "Junte products e categories. Aplique p.amount > 100 AND p.id_categories IN (1, 2, 3, 6, 9). Adicione ORDER BY p.id_categories ASC.",
+      "raExpression": "π_{products.name \\to \\text{\"name (produto)\"}, categories.name \\to \\text{\"name (categoria)\"}}(\\tau_{products.id\\_categories \\uparrow}(\\sigma_{amount > 100 \\land id\\_categories \\in \\{1,2,3,6,9\\}}(products ⨝ categories)))",
+      "raBreakdown": [
+        {"operator": "products ⨝ categories", "role": "Junção das tabelas de produtos e categorias."},
+        {"operator": "σ_{amount > 100 ∧ id_cat ∈ {1,2,3,6,9}}", "role": "Filtro combinando desigualdade numérica e pertinência a conjunto."},
+        {"operator": "τ_{id_categories ASC}", "role": "Ordenação explícita crescente pelo identificador da categoria."}
+      ],
+      "solutionSql": "SELECT p.name AS \"name (produto)\", c.name AS \"name (categoria)\"\nFROM products p\nJOIN categories c ON p.id_categories = c.id\nWHERE p.amount > 100 AND p.id_categories IN (1, 2, 3, 6, 9)\nORDER BY p.id_categories ASC;"
+    },
+    "17": {
+      "beecrowd": "Elaborado para este material",
+      "title": "Categorias com Muitos Produtos",
+      "moduleId": 4,
+      "difficulty": "Intermediário",
+      "statement": "O setor de vendas quer saber quais categorias têm um catálogo mais robusto. Exiba o nome da categoria e a quantidade de produtos cadastrados nela, mas apenas para as categorias que têm mais de 2 produtos cadastrados.",
+      "pedagogicalIntuition": "Excelente aplicação de HAVING: junte categories e products, agrupe por c.name e filtre o resultado da agregação com HAVING COUNT(*) > 2.",
+      "raExpression": "π_{name, count}(\\sigma_{count > 2}(_{categories.name}\\gamma_{COUNT(*) \\to count}(products ⨝_{products.id\\_categories = categories.id} categories)))",
+      "raBreakdown": [
+        {"operator": "products ⨝ categories", "role": "Junção entre produtos e categorias."},
+        {"operator": "_{categories.name}γ_{COUNT(*) → count}", "role": "Agrupamento por categoria e contagem de itens por grupo."},
+        {"operator": "σ_{count > 2}", "role": "Filtro pós-agregação (HAVING) mantendo apenas grupos com mais de 2 itens."}
+      ],
+      "solutionSql": "SELECT c.name, COUNT(*) AS count\nFROM products p\nJOIN categories c ON p.id_categories = c.id\nGROUP BY c.name\nHAVING COUNT(*) > 2;"
+    },
+    "18": {
+      "beecrowd": "2616",
+      "title": "No Rental",
+      "moduleId": 6,
+      "difficulty": "Intermediário",
+      "statement": "A locadora de vídeos pretende fazer uma promoção para os clientes que ainda não fizeram nenhum aluguel. Sua tarefa é entregar o ID e o nome dos clientes que ainda não fizeram nenhum aluguel. Ordene a saída pelo ID.",
+      "pedagogicalIntuition": "O clássico padrão Anti-Join! Use LEFT JOIN entre customers e locations (c.id = l.id_customers). No WHERE, selecione onde l.id IS NULL. Ordene por c.id ASC.",
+      "raExpression": "π_{id, name}(\\tau_{id \\uparrow}(customers ▷_{customers.id = locations.id\\_customers} locations))",
+      "raBreakdown": [
+        {"operator": "customers ▷ locations", "role": "Operador Anti-Semi-Join: retorna as tuplas de customers que não encontram nenhum par em locations."},
+        {"operator": "τ_{id ASC}", "role": "Ordenação crescente pelo identificador do cliente."}
+      ],
+      "solutionSql": "SELECT c.id, c.name\nFROM customers c\nLEFT JOIN locations l ON c.id = l.id_customers\nWHERE l.id IS NULL\nORDER BY c.id ASC;"
+    },
+    "19": {
+      "beecrowd": "2988",
+      "title": "Campeonato Cearense",
+      "moduleId": 7,
+      "difficulty": "Avançado",
+      "statement": "O Campeonato Cearense de Futebol atrai milhares de fãs todos os anos, e você trabalha para um jornal e é responsável por calcular a tabela de classificação. Mostre uma tabela com as seguintes colunas: o nome do time, o número de partidas, vitórias, derrotas, empates e a pontuação. Sabendo que cada vitória vale 3 pontos, cada empate vale 1 ponto e cada derrota vale 0 pontos. No final, mostre sua tabela da maior para a menor pontuação.",
+      "pedagogicalIntuition": "Cada jogo tem duas perspectivas: o time jogando em casa (team_1) e o time jogando fora (team_2). Crie uma CTE ou subconsulta que une (UNION ALL) os jogos da perspectiva 1 e perspectiva 2 calculando vitória (1/0), derrota (1/0), empate (1/0). Depois agrupe pelo time, some as vitórias, derrotas, empates, calcule score = (vitórias*3 + empates) e ordene por score DESC.",
+      "raExpression": "π_{name, matches, victories, defeats, draws, score}(\\tau_{score \\downarrow}(_{teams.name}\\gamma_{...}(teams ⨝ (Jogos_{Casa} ∪ Jogos_{Fora}))))",
+      "raBreakdown": [
+        {"operator": "Perspectiva Casa ∪ Perspectiva Fora", "role": "Unifica os jogos em uma tabela plana com colunas (team_id, v, d, e)."},
+        {"operator": "teams ⨝ Jogos", "role": "Associa o ID do time ao seu respectivo nome."},
+        {"operator": "_{teams.name}γ_{SUM(...)}", "role": "Agrupa por clube e totaliza jogos, vitórias, derrotas, empates e pontos."},
+        {"operator": "τ_{score DESC}", "role": "Ordena a tabela da pontuação mais alta para a mais baixa."}
+      ],
+      "solutionSql": "WITH matches_perspective AS (\n  SELECT team_1 AS team_id,\n         CASE WHEN team_1_goals > team_2_goals THEN 1 ELSE 0 END AS v,\n         CASE WHEN team_1_goals < team_2_goals THEN 1 ELSE 0 END AS d,\n         CASE WHEN team_1_goals = team_2_goals THEN 1 ELSE 0 END AS e\n  FROM matches\n  UNION ALL\n  SELECT team_2 AS team_id,\n         CASE WHEN team_2_goals > team_1_goals THEN 1 ELSE 0 END AS v,\n         CASE WHEN team_2_goals < team_1_goals THEN 1 ELSE 0 END AS d,\n         CASE WHEN team_2_goals = team_1_goals THEN 1 ELSE 0 END AS e\n  FROM matches\n)\nSELECT t.name,\n       COUNT(m.team_id) AS matches,\n       SUM(m.v) AS victories,\n       SUM(m.d) AS defeats,\n       SUM(m.e) AS draws,\n       (SUM(m.v) * 3 + SUM(m.e)) AS score\nFROM teams t\nJOIN matches_perspective m ON t.id = m.team_id\nGROUP BY t.name\nORDER BY score DESC;"
+    },
+    "20": {
+      "beecrowd": "2991",
+      "title": "Department Statistics",
+      "moduleId": 7,
+      "difficulty": "Avançado",
+      "statement": "Para cada departamento da empresa, mostre o nome, a quantidade de empregados, a média salarial, o maior salário e o menor salário. O resultado deve ser ordenado pela média salarial decrescente. Atenção: use COALESCE(expressao, 0) para substituir valor nulo por zero e ROUND(valor, 2) para exibir com 2 casas decimais.",
+      "pedagogicalIntuition": "O salário líquido de um funcionário é: Total de Vencimentos - Total de Descontos.\n1. Crie uma CTE que calcula o salário líquido de cada funcionário agregando emp_venc e emp_desc com COALESCE.\n2. Junte empregado com departamento (pela lotacao = cod_dep).\n3. Agrupe por departamento calculando: COUNT(matr), ROUND(AVG(salario), 2), ROUND(MAX(salario), 2), ROUND(MIN(salario), 2).\n4. Ordene por Media Salarial DESC.",
+      "raExpression": "π_{Nome, Numero, Media, Maior, Menor}(\\tau_{Media \\downarrow}(_{cod\\_dep, nome}\\gamma_{COUNT, AVG, MAX, MIN}(departamento ⨝ empregado ⨝ Salarios)))",
+      "raBreakdown": [
+        {"operator": "Subconsultas Salariais", "role": "Calcula proventos brutos por matrícula e deduz descontos aplicáveis."},
+        {"operator": "departamento ⨝ empregado ⨝ Salários", "role": "Associa o salário líquido de cada empregado ao seu respectivo departamento."},
+        {"operator": "_{cod_dep, nome}γ_{...}", "role": "Agrupa por departamento e sintetiza número de colaboradores, médias e extremos."},
+        {"operator": "τ_{Media Salarial DESC}", "role": "Ordena da maior média salarial para a menor."}
+      ],
+      "solutionSql": "WITH salarios_funcionarios AS (\n  SELECT e.matr,\n         e.lotacao AS cod_dep,\n         COALESCE((\n           SELECT SUM(v.valor)\n           FROM emp_venc ev\n           JOIN vencimento v ON ev.cod_venc = v.cod_venc\n           WHERE ev.matr = e.matr\n         ), 0) - \n         COALESCE((\n           SELECT SUM(d.valor)\n           FROM emp_desc ed\n           JOIN desconto d ON ed.cod_desc = d.cod_desc\n           WHERE ed.matr = e.matr\n         ), 0) AS salario_liquido\n  FROM empregado e\n)\nSELECT dep.nome AS \"Nome Departamento\",\n       COUNT(sf.matr) AS \"Numero de Empregados\",\n       ROUND(AVG(sf.salario_liquido), 2) AS \"Media Salarial\",\n       ROUND(MAX(sf.salario_liquido), 2) AS \"Maior Salario\",\n       ROUND(MIN(sf.salario_liquido), 2) AS \"Menor Salario\"\nFROM departamento dep\nJOIN salarios_funcionarios sf ON dep.cod_dep = sf.cod_dep\nGROUP BY dep.cod_dep, dep.nome\nORDER BY \"Media Salarial\" DESC;"
+    }
+  }
+}

@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SQL & Álgebra Relacional Studio — Laboratório Interativo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+  <!-- Header / Navigation Bar -->
+  <header class="app-header" id="app-header">
+    <div class="header-left">
+      <div class="logo-box">
+        <span class="logo-icon">⨝</span>
+        <div class="logo-text">
+          <h1>SQL & Relational Algebra Studio</h1>
+          <span class="logo-sub">Da Intuição Algébrica à Maestria em SQL</span>
+        </div>
+      </div>
+      <div class="header-meta-badge" id="current-ex-badge">
+        <span class="pulse-dot"></span>
+        <span id="header-ex-label">Carregando exercício...</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button class="nav-btn" id="btn-pipeline-modal" title="Ver Pipeline Mental de Execução">
+        <span class="icon">⚡</span> Pipeline Mental
+      </button>
+      <button class="nav-btn btn-secondary" id="btn-summary-modal" title="Ver Trabalho Pronto para Entrega">
+        <span class="icon">📋</span> Caderno de Entrega
+      </button>
+      <div class="progress-pill" id="progress-indicator">
+        <span class="progress-text" id="progress-text">0 / 20 Resolvidos</span>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progress-bar-fill" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <div class="app-container" id="app-container">
+    <!-- Left Sidebar: Curriculum Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="exercise-search" placeholder="Buscar conceito ou exercício..." />
+        </div>
+      </div>
+
+      <nav class="modules-nav" id="modules-nav">
+        <!-- Rendered dynamically by app.js -->
+      </nav>
+    </aside>
+
+    <!-- Center/Main Content -->
+    <main class="main-content" id="main-content">
+      <!-- Top Navigation Tabs (Learning vs Practice vs RA Breakdown) -->
+      <div class="content-tabs" id="content-tabs">
+        <button class="tab-btn active" id="tab-btn-concepts" data-target="panel-concepts">
+          <span class="tab-icon">📖</span> 1. Família de Conceitos & Intuição
+        </button>
+        <button class="tab-btn" id="tab-btn-practice" data-target="panel-practice">
+          <span class="tab-icon">⚡</span> 2. Prática & Editor SQL
+        </button>
+        <button class="tab-btn" id="tab-btn-ra" data-target="panel-ra">
+          <span class="tab-icon">📐</span> 3. Decomposição em Álgebra Relacional
+        </button>
+      </div>
+
+      <!-- PANEL 1: CONCEPTS & INTUITION -->
+      <section class="tab-panel active" id="panel-concepts">
+        <div class="concept-hero" id="concept-hero">
+          <div class="hero-top">
+            <span class="badge" id="module-badge">Módulo 1</span>
+            <h2 id="module-title">Título do Módulo</h2>
+          </div>
+          <p class="hero-summary" id="module-summary">Resumo do módulo...</p>
+        </div>
+
+        <div class="concepts-grid" id="concepts-grid">
+          <!-- Concept cards rendered dynamically -->
+        </div>
+
+        <div class="quick-action-strip">
+          <div class="strip-text">
+            <strong>Pronto para aplicar?</strong> Pratique agora no editor interativo com validação imediata do PDF.
+          </div>
+          <button class="btn-primary" id="btn-jump-to-practice">
+            Ir para a Prática ➜
+          </button>
+        </div>
+      </section>
+
+      <!-- PANEL 2: PRACTICE & SQL LAB -->
+      <section class="tab-panel" id="panel-practice">
+        <!-- Exercise Meta Bar -->
+        <div class="exercise-header-card" id="exercise-header-card">
+          <div class="ex-title-row">
+            <div class="ex-badge-group">
+              <span class="ex-number-badge" id="ex-number-badge">Ex 1</span>
+              <span class="beecrowd-tag" id="ex-beecrowd-tag">Beecrowd 2602</span>
+              <span class="diff-badge" id="ex-diff-badge">Iniciante</span>
+            </div>
+            <h3 class="ex-title" id="ex-title">Clientes por Estado</h3>
+          </div>
+          <p class="ex-statement" id="ex-statement">Enunciado do exercício...</p>
+
+          <div class="intuition-callout" id="intuition-callout">
+            <div class="callout-icon">💡</div>
+            <div class="callout-body">
+              <strong>Como pensar nesta consulta (Sem decorar):</strong>
+              <p id="ex-intuition-text">Texto de intuição pedagógica...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Split Workspace: SQL Editor (Left/Top) and Output Console (Right/Bottom) -->
+        <div class="workspace-grid">
+          <!-- Editor Section -->
+          <div class="editor-pane" id="editor-pane">
+            <div class="pane-header">
+              <div class="pane-title">
+                <span class="code-dot dot-red"></span>
+                <span class="code-dot dot-yellow"></span>
+                <span class="code-dot dot-green"></span>
+                <span class="pane-name">Consulta SQL (PostgreSQL / ANSI)</span>
+              </div>
+              <div class="editor-actions">
+                <button class="btn-text" id="btn-format-sql" title="Limpar e formatar">
+                  🧹 Limpar
+                </button>
+                <button class="btn-text" id="btn-hint" title="Ver dica pedagógica">
+                  💡 Dica
+                </button>
+                <button class="btn-text" id="btn-reveal-solution" title="Revelar Solução e AR">
+                  👁 Gabarito
+                </button>
+              </div>
+            </div>
+
+            <div class="editor-container">
+              <textarea id="sql-editor" spellcheck="false" placeholder="-- Escreva sua consulta SQL aqui...
+-- Dica: Pressione Ctrl + Enter para executar"></textarea>
+            </div>
+
+            <div class="editor-footer">
+              <div class="editor-hint-shortcut">
+                <kbd>Ctrl</kbd> + <kbd>Enter</kbd> para executar
+              </div>
+              <div class="editor-buttons">
+                <button class="btn-secondary" id="btn-run-sql">
+                  ▶ Executar
+                </button>
+                <button class="btn-primary" id="btn-validate-sql">
+                  ✔ Validar com Gabarito do PDF
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Output Section -->
+          <div class="output-pane" id="output-pane">
+            <div class="output-nav">
+              <button class="out-tab active" id="out-tab-result" data-target="out-view-result">
+                📊 Resultado da Consulta
+              </button>
+              <button class="out-tab" id="out-tab-expected" data-target="out-view-expected">
+                🎯 Saída Esperada (PDF)
+              </button>
+              <button class="out-tab" id="out-tab-schema" data-target="out-view-schema">
+                🗄 Dados da Tabela
+              </button>
+            </div>
+
+            <div class="output-content">
+              <!-- View 1: Execution Result -->
+              <div class="out-view active" id="out-view-result">
+                <div class="validation-banner" id="validation-banner" style="display: none;">
+                  <span class="banner-icon" id="banner-icon">✔</span>
+                  <div class="banner-text">
+                    <strong id="banner-title">Consulta Validada com Sucesso!</strong>
+                    <span id="banner-desc">Os dados retornados conferem exatamente com a saída esperada do PDF.</span>
+                  </div>
+                </div>
+
+                <div class="table-stats-bar" id="table-stats-bar">
+                  <span id="stats-row-count">0 linhas retornadas</span>
+                  <span id="stats-time">0 ms</span>
+                </div>
+
+                <div class="table-scroll-container" id="result-table-container">
+                  <div class="empty-state">
+                    <span class="empty-icon">⚡</span>
+                    <p>Clique em <strong>Executar</strong> ou <strong>Validar</strong> para rodar sua consulta.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- View 2: Expected Output -->
+              <div class="out-view" id="out-view-expected">
+                <div class="expected-info-box">
+                  <span>Output Sample Oficial do PDF (Beecrowd):</span>
+                </div>
+                <div class="table-scroll-container" id="expected-table-container">
+                  <!-- Expected table rendered dynamically -->
+                </div>
+              </div>
+
+              <!-- View 3: Schema & Data Inspector -->
+              <div class="out-view" id="out-view-schema">
+                <div class="schema-tables-list" id="schema-tables-container">
+                  <!-- Schema tables rendered dynamically -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANEL 3: RELATIONAL ALGEBRA BREAKDOWN -->
+      <section class="tab-panel" id="panel-ra">
+        <div class="ra-hero-card">
+          <span class="ra-hero-badge">Álgebra Relacional Formal</span>
+          <h3>Expressão Algébrica Equivalente</h3>
+          <div class="ra-formula-box" id="ra-formula-box">
+            <code class="ra-formula-code" id="ra-formula-code">π_{name}(σ_{state = 'RS'}(customers))</code>
+            <button class="copy-btn" id="btn-copy-ra" title="Copiar expressão">📋 Copiar</button>
+          </div>
+        </div>
+
+        <div class="ra-breakdown-card">
+          <h4>🔬 Decomposição Passo a Passo da Árvore de Consulta</h4>
+          <p class="ra-desc">Veja como a consulta é avaliada de dentro para fora pelo otimizador relacional:</p>
+          <div class="ra-nodes-list" id="ra-nodes-list">
+            <!-- Nodes rendered dynamically -->
+          </div>
+        </div>
+
+        <div class="ra-sql-comparison-card">
+          <h4>Equivalência Direta entre Álgebra e SQL</h4>
+          <div class="comparison-grid">
+            <div class="comp-col">
+              <h5>Em Álgebra Relacional (Procedural / Expressão)</h5>
+              <div class="code-box-mini" id="comp-ra-code">π_{name}(σ_{state = 'RS'}(customers))</div>
+            </div>
+            <div class="comp-arrow">⟺</div>
+            <div class="comp-col">
+              <h5>Em SQL (Declarativo)</h5>
+              <div class="code-box-mini" id="comp-sql-code">SELECT name FROM customers WHERE state = 'RS';</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- MODAL: PIPELINE MENTAL DE EXECUÇÃO -->
+  <div class="modal-overlay" id="modal-pipeline">
+    <div class="modal-box modal-large">
+      <div class="modal-header">
+        <h3>⚡ O Pipeline Mental de Execução de uma Consulta SQL</h3>
+        <button class="modal-close" id="btn-close-pipeline">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-intro">
+          Para nunca depender de gravar fórmulas, memorize como o banco de dados realmente processa sua consulta de dentro para fora:
+        </p>
+        <div class="pipeline-steps">
+          <div class="step-card">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>FROM & JOIN</strong>
+              <span class="step-ra">R × S, R ⨝ S</span>
+              <p>O banco carrega as relações base e faz as junções necessárias para montar o universo inicial de dados.</p>
+            </div>
+          </div>
+          <div class="pipeline-connector">⬇</div>
+          <div class="step-card">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>WHERE</strong>
+              <span class="step-ra">σ_{condição}</span>
+              <p>Filtra as linhas individuais. Linhas que não atendem à condição são descartadas antes de qualquer agregação.</p>
+            </div>
+          </div>
+          <div class="pipeline-connector">⬇</div>
+          <div class="step-card">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>GROUP BY</strong>
+              <span class="step-ra">_{G}γ_{F}</span>
+              <p>Divide as linhas restantes em grupos (baldes) com base nos valores das colunas especificadas.</p>
+            </div>
+          </div>
+          <div class="pipeline-connector">⬇</div>
+          <div class="step-card">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <strong>HAVING</strong>
+              <span class="step-ra">σ_{agrupamento}</span>
+              <p>Filtra os grupos inteiros formados pelo GROUP BY usando os resultados das funções de agregação (ex: COUNT > 2).</p>
+            </div>
+          </div>
+          <div class="pipeline-connector">⬇</div>
+          <div class="step-card">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <strong>SELECT</strong>
+              <span class="step-ra">π_{colunas}</span>
+              <p>Aplica a projeção final: calcula expressões, aplica funções de agregação e seleciona apenas as colunas pedidas.</p>
+            </div>
+          </div>
+          <div class="pipeline-connector">⬇</div>
+          <div class="step-card">
+            <div class="step-num">6</div>
+            <div class="step-content">
+              <strong>ORDER BY & LIMIT</strong>
+              <span class="step-ra">τ_{ordem}, LIMIT n</span>
+              <p>Ordena o conjunto final de resultados e trunca para o número especificado de linhas.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: RESUMO COMPLETO PARA ENTREGA (CADERNO DO TRABALHO) -->
+  <div class="modal-overlay" id="modal-summary">
+    <div class="modal-box modal-xlarge">
+      <div class="modal-header">
+        <h3>📋 Caderno de Entrega do Trabalho Prático (Formato Oficial)</h3>
+        <button class="modal-close" id="btn-close-summary">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="summary-toolbar">
+          <p>Este texto contém todas as 20 resoluções em Álgebra Relacional e SQL no formato exato solicitado pelo enunciado do trabalho.</p>
+          <button class="btn-primary" id="btn-copy-full-assignment">📋 Copiar Todo o Trabalho</button>
+        </div>
+        <textarea id="full-assignment-text" readonly class="assignment-textarea"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast" id="toast-notification">
+    <span id="toast-message">Notificação</span>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
