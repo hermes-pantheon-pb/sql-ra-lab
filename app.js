@@ -4,7 +4,7 @@
  */
 
 let curriculumData = null;
-let currentExerciseId = 1;
+let currentExerciseId = "T1.1";
 let currentModuleId = 1;
 let solvedExercises = new Set();
 
@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   setupUIEventListeners();
   setupKeyboardShortcuts();
   updateProgressUI();
-  selectExercise(1);
+  selectExercise("T1.1");
 });
 
 async function loadCurriculum() {
@@ -168,30 +168,37 @@ function renderSidebar() {
     const exList = document.createElement("div");
     exList.className = "module-exercises-list";
 
-    mod.exercises.forEach((exId) => {
-      const exMeta = curriculumData.assignmentExercises[exId];
-      if (!exMeta) return;
+    // 1. Training Exercises Section
+    if (mod.trainingExercises && mod.trainingExercises.length > 0) {
+      const trainSectionHeader = document.createElement("div");
+      trainSectionHeader.className = "sidebar-section-divider";
+      trainSectionHeader.innerHTML = `<span>🏋️ Treino de Conceitos</span>`;
+      exList.appendChild(trainSectionHeader);
 
-      const item = document.createElement("div");
-      item.className = "exercise-nav-item";
-      item.id = `nav-ex-${exId}`;
-      if (exId === currentExerciseId) item.classList.add("active");
+      mod.trainingExercises.forEach((exId) => {
+        const exMeta = curriculumData.exercises[exId];
+        if (!exMeta) return;
 
-      const isSolved = solvedExercises.has(exId);
-      item.innerHTML = `
-        <div class="ex-nav-left">
-          <span class="ex-tag-num">#${exId}</span>
-          <span class="ex-nav-title">${exMeta.title}</span>
-        </div>
-        <span class="ex-status-icon">${isSolved ? "✅" : "⚪"}</span>
-      `;
-
-      item.addEventListener("click", () => {
-        selectExercise(exId);
+        const item = createNavItem(exId, exMeta, true);
+        exList.appendChild(item);
       });
+    }
 
-      exList.appendChild(item);
-    });
+    // 2. Official Assignment Exercises Section
+    if (mod.assignmentExercises && mod.assignmentExercises.length > 0) {
+      const assignSectionHeader = document.createElement("div");
+      assignSectionHeader.className = "sidebar-section-divider";
+      assignSectionHeader.innerHTML = `<span>🎯 Lista Oficial (PDF)</span>`;
+      exList.appendChild(assignSectionHeader);
+
+      mod.assignmentExercises.forEach((exId) => {
+        const exMeta = curriculumData.exercises[String(exId)];
+        if (!exMeta) return;
+
+        const item = createNavItem(String(exId), exMeta, false);
+        exList.appendChild(item);
+      });
+    }
 
     group.appendChild(header);
     group.appendChild(exList);
@@ -199,16 +206,41 @@ function renderSidebar() {
   });
 }
 
+function createNavItem(exId, exMeta, isTreino) {
+  const item = document.createElement("div");
+  item.className = "exercise-nav-item";
+  if (isTreino) item.classList.add("item-treino");
+  item.id = `nav-ex-${exId}`;
+  if (String(exId) === String(currentExerciseId)) item.classList.add("active");
+
+  const isSolved = solvedExercises.has(String(exId));
+  const tagLabel = isTreino ? exId : `Ex ${exId}`;
+
+  item.innerHTML = `
+    <div class="ex-nav-left">
+      <span class="ex-tag-num">${tagLabel}</span>
+      <span class="ex-nav-title">${escapeHtml(exMeta.title)}</span>
+    </div>
+    <span class="ex-status-icon">${isSolved ? "✅" : "⚪"}</span>
+  `;
+
+  item.addEventListener("click", () => {
+    selectExercise(String(exId));
+  });
+
+  return item;
+}
+
 async function selectExercise(exId) {
-  currentExerciseId = exId;
-  const exMeta = curriculumData.assignmentExercises[exId];
+  currentExerciseId = String(exId);
+  const exMeta = curriculumData.exercises[currentExerciseId];
   if (!exMeta) return;
 
   currentModuleId = exMeta.moduleId;
 
   // Update active sidebar state
   document.querySelectorAll(".exercise-nav-item").forEach((it) => it.classList.remove("active"));
-  const activeNav = document.getElementById(`nav-ex-${exId}`);
+  const activeNav = document.getElementById(`nav-ex-${currentExerciseId}`);
   if (activeNav) activeNav.classList.add("active");
 
   document.querySelectorAll(".module-group").forEach((grp) => grp.classList.remove("active"));
@@ -218,23 +250,28 @@ async function selectExercise(exId) {
   }
 
   // Update Header Badge
-  document.getElementById("header-ex-label").innerText = `Ex ${exId}: ${exMeta.title} (${exMeta.beecrowd})`;
+  const isTreino = exMeta.type === "treino";
+  const headerLabel = isTreino
+    ? `${exId}: ${exMeta.title} (${exMeta.badgeTag})`
+    : `Ex ${exId}: ${exMeta.title} (Beecrowd ${exMeta.beecrowd || ""})`;
+  document.getElementById("header-ex-label").innerText = headerLabel;
 
   // Render Concepts Panel for this Module
   renderModuleConcepts(currentModuleId);
 
   // Render Practice Panel for this Exercise
-  document.getElementById("ex-number-badge").innerText = `Exercício ${exId}`;
-  document.getElementById("ex-beecrowd-tag").innerText = `Beecrowd ${exMeta.beecrowd}`;
+  document.getElementById("ex-number-badge").innerText = isTreino ? `Treino ${exId}` : `Exercício ${exId}`;
+  document.getElementById("ex-number-badge").style.background = isTreino ? "var(--accent-purple)" : "var(--accent-blue)";
+  document.getElementById("ex-beecrowd-tag").innerText = isTreino ? exMeta.badgeTag : `Beecrowd ${exMeta.beecrowd}`;
   document.getElementById("ex-diff-badge").innerText = exMeta.difficulty;
   document.getElementById("ex-title").innerText = exMeta.title;
   document.getElementById("ex-statement").innerText = exMeta.statement;
   document.getElementById("ex-intuition-text").innerText = exMeta.pedagogicalIntuition;
 
   // Load editor draft
-  const savedDraft = localStorage.getItem(`sql_draft_ex_${exId}`);
+  const savedDraft = localStorage.getItem(`sql_draft_ex_${currentExerciseId}`);
   const editor = document.getElementById("sql-editor");
-  editor.value = savedDraft ? savedDraft : `-- Exercício ${exId}: ${exMeta.title}\n-- Escreva sua consulta SQL e pressione Ctrl + Enter:\n`;
+  editor.value = savedDraft ? savedDraft : `-- ${isTreino ? "Treino" : "Exercício"} ${exId}: ${exMeta.title}\n-- Escreva sua consulta SQL e pressione Ctrl + Enter:\n`;
 
   // Hide validation banner & clear previous results
   document.getElementById("validation-banner").style.display = "none";
@@ -251,7 +288,7 @@ async function selectExercise(exId) {
   renderRAPanel(exMeta);
 
   // Fetch and render Exercise Details (Schema and Expected Output)
-  await fetchExerciseData(exId);
+  await fetchExerciseData(currentExerciseId);
 }
 
 function renderModuleConcepts(moduleId) {
@@ -310,10 +347,7 @@ async function fetchExerciseData(exId) {
       return;
     }
 
-    // Render Expected Output Table
     renderExpectedTable(data.expectedColumns, data.expectedRows);
-
-    // Render Schema Tables Inspector
     renderSchemaTables(data.tables);
   } catch (err) {
     console.error("Erro ao obter dados do exercício:", err);
@@ -380,7 +414,6 @@ async function runSQL() {
     return;
   }
 
-  // Switch to result tab
   document.getElementById("out-tab-result").click();
 
   const container = document.getElementById("result-table-container");
@@ -423,7 +456,6 @@ async function validateSQL() {
     return;
   }
 
-  // Switch to result tab
   document.getElementById("out-tab-result").click();
 
   const container = document.getElementById("result-table-container");
@@ -449,10 +481,10 @@ async function validateSQL() {
       bannerIcon.innerText = "✔";
       bannerTitle.innerText = "Accepted! (Gabarito 100% Correto)";
       bannerDesc.innerText = "Sua consulta SQL produziu exatamente a saída solicitada pelo enunciado e pelo Beecrowd!";
-      showToast(`🎉 Exercício ${currentExerciseId} Resolvido com Sucesso!`);
+      showToast(`🎉 Item ${currentExerciseId} Resolvido com Sucesso!`);
 
       // Mark as solved
-      solvedExercises.add(currentExerciseId);
+      solvedExercises.add(String(currentExerciseId));
       localStorage.setItem("sql_ra_solved", JSON.stringify([...solvedExercises]));
       updateProgressUI();
       renderSidebar();
@@ -506,16 +538,16 @@ function renderResultTable(columns, rows) {
 }
 
 function showPedagogicalHint() {
-  const exMeta = curriculumData.assignmentExercises[currentExerciseId];
+  const exMeta = curriculumData.exercises[currentExerciseId];
   if (!exMeta) return;
-  alert(`💡 Dica para o Exercício ${currentExerciseId} (${exMeta.title}):\n\n${exMeta.pedagogicalIntuition}`);
+  alert(`💡 Dica para ${exMeta.title}:\n\n${exMeta.pedagogicalIntuition}`);
 }
 
 function revealSolution() {
-  const exMeta = curriculumData.assignmentExercises[currentExerciseId];
+  const exMeta = curriculumData.exercises[currentExerciseId];
   if (!exMeta) return;
 
-  const confirmMsg = `Deseja ver a resposta e a Álgebra Relacional do Exercício ${currentExerciseId}?`;
+  const confirmMsg = `Deseja ver a resposta e a Álgebra Relacional de ${exMeta.title}?`;
   if (confirm(confirmMsg)) {
     document.getElementById("sql-editor").value = exMeta.solutionSql;
     document.getElementById("tab-btn-ra").click();
@@ -525,8 +557,9 @@ function revealSolution() {
 
 function updateProgressUI() {
   const count = solvedExercises.size;
-  const pct = Math.round((count / 20) * 100);
-  document.getElementById("progress-text").innerText = `${count} / 20 Resolvidos (${pct}%)`;
+  const total = 20 + 20; // 20 oficiais + treinos
+  const pct = Math.min(100, Math.round((count / 30) * 100));
+  document.getElementById("progress-text").innerText = `${count} Resolvidos`;
   document.getElementById("progress-bar-fill").style.width = `${pct}%`;
 }
 
@@ -537,7 +570,7 @@ function renderSummaryAssignmentModal() {
   text += `========================================================================\n\n`;
 
   for (let i = 1; i <= 20; i++) {
-    const ex = curriculumData.assignmentExercises[i];
+    const ex = curriculumData.exercises[String(i)];
     if (!ex) continue;
     text += `Exercício ${i} — ${ex.title} (Beecrowd ${ex.beecrowd})\n`;
     text += `Expressão Algébrica:\n${ex.raExpression}\n\n`;
@@ -578,11 +611,8 @@ function escapeHtml(str) {
 function formatMarkdown(text) {
   if (!text) return "";
   let out = escapeHtml(text);
-  // Bold
   out = out.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-  // Code
   out = out.replace(/`(.*?)`/g, "<code>$1</code>");
-  // Newlines to br
   out = out.replace(/\n\n/g, "<br><br>");
   return out;
 }

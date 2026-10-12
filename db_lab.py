@@ -1,16 +1,540 @@
 #!/usr/bin/env python3
 """
 Interactive Database Lab for Relational Algebra & SQL
-Covers Exercises 1 to 20 from Trabalho Pratico I (Introducao a Banco de Dados / Beecrowd)
+Covers:
+1. Concept Training Exercises (Treino Conceitual por Tópico)
+2. Assignment Exercises 1 to 20 from Trabalho Pratico I (Beecrowd)
 """
 
 import sys
 import sqlite3
 from typing import Dict, Any, List, Tuple
 
-EXERCISES_DATA: Dict[int, Dict[str, Any]] = {
-    1: {
+# All exercises: Training ("T1.1", "T1.2", ...) and Assignment (1 to 20 or "1" to "20")
+EXERCISES_DATA: Dict[str, Dict[str, Any]] = {
+    # =========================================================================
+    # MÓDULO 1: TREINOS CONCEITUAIS
+    # =========================================================================
+    "T1.1": {
+        "title": "[Treino: Expressões e Apelidos na Projeção (π)]",
+        "type": "treino",
+        "topic": "Projeção (π), Cálculos Aritméticos e Renomeação (AS)",
+        "setup": """
+            CREATE TABLE store_products (
+                id INTEGER PRIMARY KEY,
+                name TEXT,
+                price REAL,
+                stock INTEGER
+            );
+            INSERT INTO store_products VALUES
+            (1, 'Notebook Pro', 3000.00, 15),
+            (2, 'Mouse Sem Fio', 80.00, 50),
+            (3, 'Teclado Mecanico', 250.00, 30),
+            (4, 'Monitor 4K', 1500.00, 8);
+        """,
+        "expected_columns": ["name", "price", "discount_price"],
+        "expected_rows": [
+            ("Notebook Pro", 3000.00, 2700.00),
+            ("Mouse Sem Fio", 80.00, 72.00),
+            ("Teclado Mecanico", 250.00, 225.00),
+            ("Monitor 4K", 1500.00, 1350.00)
+        ]
+    },
+    "T1.2": {
+        "title": "[Treino: Intervalos Contínuos com BETWEEN]",
+        "type": "treino",
+        "topic": "Seleção (σ) e Predicado de Faixa BETWEEN ... AND ...",
+        "setup": """
+            CREATE TABLE store_products (
+                id INTEGER PRIMARY KEY,
+                name TEXT,
+                price REAL,
+                stock INTEGER
+            );
+            INSERT INTO store_products VALUES
+            (1, 'Notebook Pro', 3000.00, 15),
+            (2, 'Mouse Sem Fio', 80.00, 50),
+            (3, 'Teclado Mecanico', 250.00, 30),
+            (4, 'Monitor 4K', 1500.00, 8);
+        """,
+        "expected_columns": ["name", "price"],
+        "expected_rows": [
+            ("Teclado Mecanico", 250.00),
+            ("Monitor 4K", 1500.00)
+        ]
+    },
+    "T1.3": {
+        "title": "[Treino: Pertença a Conjunto Discreto com IN]",
+        "type": "treino",
+        "topic": "Seleção (σ) e Pertencimento a Conjunto com IN (...)",
+        "setup": """
+            CREATE TABLE employees (
+                id INTEGER PRIMARY KEY,
+                name TEXT,
+                department TEXT,
+                salary REAL
+            );
+            INSERT INTO employees VALUES
+            (1, 'Ana Silva', 'TI', 6000.00),
+            (2, 'Bruno Costa', 'RH', 4500.00),
+            (3, 'Carlos Lima', 'Vendas', 5000.00),
+            (4, 'Daniela Rocha', 'Financeiro', 7000.00),
+            (5, 'Eduardo Santos', 'TI', 6200.00),
+            (6, 'Fernanda Sousa', 'Marketing', 4800.00);
+        """,
+        "expected_columns": ["name", "department"],
+        "expected_rows": [
+            ("Ana Silva", "TI"),
+            ("Bruno Costa", "RH"),
+            ("Daniela Rocha", "Financeiro"),
+            ("Eduardo Santos", "TI")
+        ]
+    },
+    "T1.4": {
+        "title": "[Treino: Busca de Padrões de Texto com LIKE]",
+        "type": "treino",
+        "topic": "Seleção (σ) e Casamento de Padrões LIKE com Curingas (% e _)",
+        "setup": """
+            CREATE TABLE clients (
+                id INTEGER PRIMARY KEY,
+                name TEXT,
+                email TEXT,
+                city TEXT
+            );
+            INSERT INTO clients VALUES
+            (1, 'Mariana Silva', 'mariana@gmail.com', 'Sao Paulo'),
+            (2, 'Marcos Oliveira', 'marcos@empresa.com.br', 'Rio de Janeiro'),
+            (3, 'Carla Ramos', 'carla@gmail.com', 'Belo Horizonte'),
+            (4, 'Mario Soares', 'mario123@yahoo.com', 'Sao Paulo'),
+            (5, 'Patricia Matos', 'patricia@gmail.com', 'Curitiba');
+        """,
+        "expected_columns": ["name", "email"],
+        "expected_rows": [
+            ("Mariana Silva", "mariana@gmail.com"),
+            ("Marcos Oliveira", "marcos@empresa.com.br"),
+            ("Mario Soares", "mario123@yahoo.com")
+        ]
+    },
+    "T1.5": {
+        "title": "[Treino: Tratamento de Nulos com IS NULL]",
+        "type": "treino",
+        "topic": "Lógica Tri-Valorada e Tratamento de Nulos com IS NULL / IS NOT NULL",
+        "setup": """
+            CREATE TABLE clients_contact (
+                id INTEGER PRIMARY KEY,
+                name TEXT,
+                phone TEXT,
+                email TEXT
+            );
+            INSERT INTO clients_contact VALUES
+            (1, 'Lucas Pires', '99111-2222', 'lucas@gmail.com'),
+            (2, 'Beatriz Mendes', NULL, 'beatriz@hotmail.com'),
+            (3, 'Renato Silva', '98888-5555', NULL),
+            (4, 'Camila Duarte', NULL, NULL),
+            (5, 'Tiago Souza', '97777-4444', 'tiago@empresa.com');
+        """,
+        "expected_columns": ["id", "name"],
+        "expected_rows": [
+            (2, "Beatriz Mendes"),
+            (4, "Camila Duarte")
+        ]
+    },
+    "T1.6": {
+        "title": "[Treino: Precedência de Operadores Lógicos (NOT, AND, OR)]",
+        "type": "treino",
+        "topic": "Precedência Booleana (NOT > AND > OR) e Agrupamento com Parênteses",
+        "setup": """
+            CREATE TABLE employees (
+                id INTEGER PRIMARY KEY,
+                name TEXT,
+                department TEXT,
+                salary REAL
+            );
+            INSERT INTO employees VALUES
+            (1, 'Ana Silva', 'TI', 6000.00),
+            (2, 'Bruno Costa', 'RH', 4500.00),
+            (3, 'Carlos Lima', 'Vendas', 5000.00),
+            (4, 'Daniela Rocha', 'Financeiro', 7000.00),
+            (5, 'Eduardo Santos', 'TI', 6200.00),
+            (6, 'Fernanda Sousa', 'Marketing', 4800.00);
+        """,
+        "expected_columns": ["name", "department", "salary"],
+        "expected_rows": [
+            ("Ana Silva", "TI", 6000.00),
+            ("Eduardo Santos", "TI", 6200.00)
+        ]
+    },
+
+    # =========================================================================
+    # MÓDULO 2: TREINOS CONCEITUAIS
+    # =========================================================================
+    "T2.1": {
+        "title": "[Treino: Contagem Total vs Contagem de Atributo Não-Nulo]",
+        "type": "treino",
+        "topic": "Agregação γ: Diferença semântica entre COUNT(*) e COUNT(coluna)",
+        "setup": """
+            CREATE TABLE members (
+                id INTEGER PRIMARY KEY,
+                name TEXT,
+                email TEXT
+            );
+            INSERT INTO members VALUES
+            (1, 'Alice', 'alice@test.com'),
+            (2, 'Bob', NULL),
+            (3, 'Charlie', 'charlie@test.com'),
+            (4, 'David', NULL),
+            (5, 'Eva', 'eva@test.com');
+        """,
+        "expected_columns": ["total_members", "members_with_email"],
+        "expected_rows": [
+            (5, 3)
+        ]
+    },
+    "T2.2": {
+        "title": "[Treino: Contagem de Valores Únicos com COUNT(DISTINCT)]",
+        "type": "treino",
+        "topic": "Agregação γ com Eliminação Prévia de Duplicatas",
+        "setup": """
+            CREATE TABLE orders_sample (
+                id INTEGER PRIMARY KEY,
+                client_id INTEGER,
+                order_date TEXT
+            );
+            INSERT INTO orders_sample VALUES
+            (1, 10, '2023-01-01'),
+            (2, 20, '2023-01-02'),
+            (3, 10, '2023-01-03'),
+            (4, 30, '2023-01-04'),
+            (5, 20, '2023-01-05');
+        """,
+        "expected_columns": ["unique_buyers"],
+        "expected_rows": [
+            (3,)
+        ]
+    },
+    "T2.3": {
+        "title": "[Treino: Múltiplas Agregações Globais e Arredondamento]",
+        "type": "treino",
+        "topic": "Agregação γ: MIN, MAX, SUM e ROUND(AVG, 2)",
+        "setup": """
+            CREATE TABLE sales (
+                id INTEGER PRIMARY KEY,
+                amount REAL
+            );
+            INSERT INTO sales VALUES
+            (1, 100.00),
+            (2, 250.50),
+            (3, 80.00),
+            (4, 320.00),
+            (5, 140.25);
+        """,
+        "expected_columns": ["menor", "maior", "soma", "media"],
+        "expected_rows": [
+            (80.00, 320.00, 890.75, 178.15)
+        ]
+    },
+
+    # =========================================================================
+    # MÓDULO 3: TREINOS CONCEITUAIS
+    # =========================================================================
+    "T3.1": {
+        "title": "[Treino: Equi-Join Básico de 2 Tabelas com Apelidos]",
+        "type": "treino",
+        "topic": "Junção Relacional (⨝): Conexão PK = FK e Apelidos de Tabela",
+        "setup": """
+            CREATE TABLE depts (
+                id INTEGER PRIMARY KEY,
+                dept_name TEXT
+            );
+            INSERT INTO depts VALUES (1, 'Tecnologia'), (2, 'Financeiro');
+
+            CREATE TABLE staff (
+                id INTEGER PRIMARY KEY,
+                name TEXT,
+                dept_id INTEGER
+            );
+            INSERT INTO staff VALUES
+            (10, 'Alice', 1),
+            (11, 'Bob', 2),
+            (12, 'Carol', 1);
+        """,
+        "expected_columns": ["name", "dept_name"],
+        "expected_rows": [
+            ("Alice", "Tecnologia"),
+            ("Bob", "Financeiro"),
+            ("Carol", "Tecnologia")
+        ]
+    },
+    "T3.2": {
+        "title": "[Treino: Junção com Filtro no WHERE em Tabela Relacionada]",
+        "type": "treino",
+        "topic": "Composição: Junção ⨝ combinada com Seleção σ no WHERE",
+        "setup": """
+            CREATE TABLE depts (
+                id INTEGER PRIMARY KEY,
+                dept_name TEXT
+            );
+            INSERT INTO depts VALUES (1, 'Tecnologia'), (2, 'Financeiro');
+
+            CREATE TABLE staff (
+                id INTEGER PRIMARY KEY,
+                name TEXT,
+                dept_id INTEGER
+            );
+            INSERT INTO staff VALUES
+            (10, 'Alice', 1),
+            (11, 'Bob', 2),
+            (12, 'Carol', 1);
+        """,
+        "expected_columns": ["name"],
+        "expected_rows": [
+            ("Alice",),
+            ("Carol",)
+        ]
+    },
+    "T3.3": {
+        "title": "[Treino: Junção Encadeada de 3 Tabelas com Desambiguação]",
+        "type": "treino",
+        "topic": "Multi-Join ((A ⨝ B) ⨝ C) e Desambiguação de Atributos Homônimos",
+        "setup": """
+            CREATE TABLE courses (
+                id INTEGER PRIMARY KEY,
+                title TEXT
+            );
+            INSERT INTO courses VALUES (101, 'Banco de Dados'), (102, 'Redes');
+
+            CREATE TABLE students (
+                id INTEGER PRIMARY KEY,
+                name TEXT
+            );
+            INSERT INTO students VALUES (1, 'Juliana'), (2, 'Marcos');
+
+            CREATE TABLE enrollments (
+                student_id INTEGER,
+                course_id INTEGER,
+                grade REAL
+            );
+            INSERT INTO enrollments VALUES
+            (1, 101, 9.5),
+            (2, 101, 8.0),
+            (1, 102, 10.0);
+        """,
+        "expected_columns": ["student_name", "course_title", "grade"],
+        "expected_rows": [
+            ("Juliana", "Banco de Dados", 9.5),
+            ("Marcos", "Banco de Dados", 8.0),
+            ("Juliana", "Redes", 10.0)
+        ]
+    },
+
+    # =========================================================================
+    # MÓDULO 4: TREINOS CONCEITUAIS
+    # =========================================================================
+    "T4.1": {
+        "title": "[Treino: Agrupamento Básico com GROUP BY e COUNT(*)]",
+        "type": "treino",
+        "topic": "Agrupamento (_{G}γ_{F}): Particionamento em Baldes e Contagem por Grupo",
+        "setup": """
+            CREATE TABLE inventory (
+                id INTEGER PRIMARY KEY,
+                item_name TEXT,
+                category TEXT
+            );
+            INSERT INTO inventory VALUES
+            (1, 'Mouse', 'Perifericos'),
+            (2, 'Teclado', 'Perifericos'),
+            (3, 'Monitor', 'Monitores'),
+            (4, 'Headset', 'Perifericos'),
+            (5, 'Monitor Ultrawide', 'Monitores');
+        """,
+        "expected_columns": ["category", "total_items"],
+        "expected_rows": [
+            ("Monitores", 2),
+            ("Perifericos", 3)
+        ]
+    },
+    "T4.2": {
+        "title": "[Treino: Filtro de Grupos com HAVING (COUNT >= N)]",
+        "type": "treino",
+        "topic": "Filtro Pós-Agrupamento (HAVING) vs Filtro de Tupla (WHERE)",
+        "setup": """
+            CREATE TABLE inventory (
+                id INTEGER PRIMARY KEY,
+                item_name TEXT,
+                category TEXT
+            );
+            INSERT INTO inventory VALUES
+            (1, 'Mouse', 'Perifericos'),
+            (2, 'Teclado', 'Perifericos'),
+            (3, 'Monitor', 'Monitores'),
+            (4, 'Headset', 'Perifericos'),
+            (5, 'Monitor Ultrawide', 'Monitores');
+        """,
+        "expected_columns": ["category", "total_items"],
+        "expected_rows": [
+            ("Perifericos", 3)
+        ]
+    },
+
+    # =========================================================================
+    # MÓDULO 5: TREINOS CONCEITUAIS
+    # =========================================================================
+    "T5.1": {
+        "title": "[Treino: Ordenação Ascendente e Descendente (ORDER BY)]",
+        "type": "treino",
+        "topic": "Operador Tau (τ): Multi-Column Ordering (ASC e DESC)",
+        "setup": """
+            CREATE TABLE players (
+                id INTEGER PRIMARY KEY,
+                name TEXT,
+                score INTEGER,
+                age INTEGER
+            );
+            INSERT INTO players VALUES
+            (1, 'Arthur', 100, 20),
+            (2, 'Beatriz', 150, 22),
+            (3, 'Carlos', 150, 19),
+            (4, 'Diana', 90, 25);
+        """,
+        "expected_columns": ["name", "score", "age"],
+        "expected_rows": [
+            ("Carlos", 150, 19),
+            ("Beatriz", 150, 22),
+            ("Arthur", 100, 20),
+            ("Diana", 90, 25)
+        ]
+    },
+    "T5.2": {
+        "title": "[Treino: Filtragem de Intervalos de Datas (ISO 8601)]",
+        "type": "treino",
+        "topic": "Filtro Temporal: Comparações Cronológicas Diretas (>= e <=)",
+        "setup": """
+            CREATE TABLE logs (
+                id INTEGER PRIMARY KEY,
+                event TEXT,
+                log_date TEXT
+            );
+            INSERT INTO logs VALUES
+            (1, 'Login', '2023-05-01'),
+            (2, 'Upload', '2023-05-15'),
+            (3, 'Logout', '2023-05-31'),
+            (4, 'Login', '2023-06-05');
+        """,
+        "expected_columns": ["event", "log_date"],
+        "expected_rows": [
+            ("Login", "2023-05-01"),
+            ("Upload", "2023-05-15"),
+            ("Logout", "2023-05-31")
+        ]
+    },
+
+    # =========================================================================
+    # MÓDULO 6: TREINOS CONCEITUAIS
+    # =========================================================================
+    "T6.1": {
+        "title": "[Treino: Anti-Junção com LEFT JOIN + IS NULL]",
+        "type": "treino",
+        "topic": "Anti-Junção (▷) / Diferença (-): Tuplas em A que não existem em B",
+        "setup": """
+            CREATE TABLE users (
+                id INTEGER PRIMARY KEY,
+                name TEXT
+            );
+            INSERT INTO users VALUES (1, 'Vitor'), (2, 'Lorena'), (3, 'Gabriel');
+
+            CREATE TABLE purchases (
+                id INTEGER PRIMARY KEY,
+                user_id INTEGER,
+                amount REAL
+            );
+            INSERT INTO purchases VALUES (101, 1, 50.0), (102, 3, 120.0);
+        """,
+        "expected_columns": ["id", "name"],
+        "expected_rows": [
+            (2, "Lorena")
+        ]
+    },
+    "T6.2": {
+        "title": "[Treino: Empilhamento de Conjuntos com UNION ALL]",
+        "type": "treino",
+        "topic": "União de Relações (∪): Empilhamento Vertical de Consultas",
+        "setup": """
+            CREATE TABLE north_sales (
+                seller TEXT,
+                total REAL
+            );
+            INSERT INTO north_sales VALUES ('Amanda', 500.0), ('Bernardo', 750.0);
+
+            CREATE TABLE south_sales (
+                seller TEXT,
+                total REAL
+            );
+            INSERT INTO south_sales VALUES ('Caio', 300.0), ('Debora', 820.0);
+        """,
+        "expected_columns": ["seller", "total"],
+        "expected_rows": [
+            ("Amanda", 500.0),
+            ("Bernardo", 750.0),
+            ("Caio", 300.0),
+            ("Debora", 820.0)
+        ]
+    },
+
+    # =========================================================================
+    # MÓDULO 7: TREINOS CONCEITUAIS
+    # =========================================================================
+    "T7.1": {
+        "title": "[Treino: Transformação Condicional com CASE WHEN]",
+        "type": "treino",
+        "topic": "Lógica Condicional (IF-ELSE Relacional) na Projeção",
+        "setup": """
+            CREATE TABLE students_notes (
+                id INTEGER PRIMARY KEY,
+                name TEXT,
+                score REAL
+            );
+            INSERT INTO students_notes VALUES
+            (1, 'Felipe', 8.5),
+            (2, 'Gisele', 4.0),
+            (3, 'Heitor', 6.0);
+        """,
+        "expected_columns": ["name", "status"],
+        "expected_rows": [
+            ("Felipe", "Aprovado"),
+            ("Gisele", "Reprovado"),
+            ("Heitor", "Recuperacao")
+        ]
+    },
+    "T7.2": {
+        "title": "[Treino: Substituição Segura de Nulos com COALESCE]",
+        "type": "treino",
+        "topic": "Tratamento de Nulos em Cálculos Aritméticos com COALESCE(col, fallback)",
+        "setup": """
+            CREATE TABLE accounts (
+                id INTEGER PRIMARY KEY,
+                holder TEXT,
+                balance REAL,
+                bonus REAL
+            );
+            INSERT INTO accounts VALUES
+            (1, 'Igor', 1000.0, 200.0),
+            (2, 'Joana', 1500.0, NULL),
+            (3, 'Katia', 800.0, 50.0);
+        """,
+        "expected_columns": ["holder", "total_funds"],
+        "expected_rows": [
+            ("Igor", 1200.0),
+            ("Joana", 1500.0),
+            ("Katia", 850.0)
+        ]
+    },
+
+    # =========================================================================
+    # EXERCÍCIOS OFICIAIS DO PDF (1 A 20 — BEECROWD)
+    # =========================================================================
+    "1": {
         "title": "Clientes por Estado (Beecrowd 2602)",
+        "type": "oficial",
         "setup": """
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY,
@@ -34,8 +558,9 @@ EXERCISES_DATA: Dict[int, Dict[str, Any]] = {
             ("Marcos Antônio dos Santos",)
         ]
     },
-    2: {
+    "2": {
         "title": "Under 10 or Greater Than 100 (Beecrowd 2604)",
+        "type": "oficial",
         "setup": """
             CREATE TABLE products (
                 id INTEGER PRIMARY KEY,
@@ -58,8 +583,9 @@ EXERCISES_DATA: Dict[int, Dict[str, Any]] = {
             (5, "Chair")
         ]
     },
-    3: {
+    "3": {
         "title": "Higher and Lower Price (Beecrowd 2608)",
+        "type": "oficial",
         "setup": """
             CREATE TABLE products (
                 id INTEGER PRIMARY KEY,
@@ -80,8 +606,9 @@ EXERCISES_DATA: Dict[int, Dict[str, Any]] = {
             (800.0, 25.50)
         ]
     },
-    4: {
+    "4": {
         "title": "Average Value of Products (Beecrowd 2610)",
+        "type": "oficial",
         "setup": """
             CREATE TABLE products (
                 id INTEGER PRIMARY KEY,
@@ -102,8 +629,9 @@ EXERCISES_DATA: Dict[int, Dict[str, Any]] = {
             (396.10,)
         ]
     },
-    5: {
+    "5": {
         "title": "Number of Cities per Customers (Beecrowd 2624)",
+        "type": "oficial",
         "setup": """
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY,
@@ -126,8 +654,9 @@ EXERCISES_DATA: Dict[int, Dict[str, Any]] = {
             (4,)
         ]
     },
-    6: {
+    "6": {
         "title": "Legal Person (Beecrowd 2622)",
+        "type": "oficial",
         "setup": """
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY,
@@ -160,8 +689,9 @@ EXERCISES_DATA: Dict[int, Dict[str, Any]] = {
             ("Sabrina Heloisa Gabriela Barros",)
         ]
     },
-    7: {
+    "7": {
         "title": "Executive Representatives (Beecrowd 2605)",
+        "type": "oficial",
         "setup": """
             CREATE TABLE products (
                 id INTEGER PRIMARY KEY,
@@ -209,8 +739,9 @@ EXERCISES_DATA: Dict[int, Dict[str, Any]] = {
             ("Chair", "Caroline Silva")
         ]
     },
-    8: {
+    "8": {
         "title": "Action Movies (Beecrowd 2611)",
+        "type": "oficial",
         "setup": """
             CREATE TABLE movies (
                 id INTEGER PRIMARY KEY,
@@ -237,8 +768,9 @@ EXERCISES_DATA: Dict[int, Dict[str, Any]] = {
             (2, "The Battle of the Dark River")
         ]
     },
-    9: {
+    "9": {
         "title": "Provider Ajax SA (Beecrowd 2617)",
+        "type": "oficial",
         "setup": """
             CREATE TABLE providers (
                 id INTEGER PRIMARY KEY,
@@ -273,8 +805,9 @@ EXERCISES_DATA: Dict[int, Dict[str, Any]] = {
             ("Red Chair", "Ajax SA")
         ]
     },
-    10: {
+    "10": {
         "title": "Products by Categories (Beecrowd 2609)",
+        "type": "oficial",
         "setup": """
             CREATE TABLE products (
                 id INTEGER PRIMARY KEY,
@@ -306,8 +839,9 @@ EXERCISES_DATA: Dict[int, Dict[str, Any]] = {
             ("vintage", 1000)
         ]
     },
-    11: {
+    "11": {
         "title": "September Rentals (Beecrowd 2614)",
+        "type": "oficial",
         "setup": """
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY,
@@ -342,8 +876,9 @@ EXERCISES_DATA: Dict[int, Dict[str, Any]] = {
             ("Kauã Azevedo Ribeiro", "2016-09-09")
         ]
     },
-    12: {
+    "12": {
         "title": "Orders in First Half (Beecrowd 2620)",
+        "type": "oficial",
         "setup": """
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY,
@@ -382,8 +917,9 @@ EXERCISES_DATA: Dict[int, Dict[str, Any]] = {
             ("Joaquim Diego Lorenzo Araújo", 5)
         ]
     },
-    13: {
+    "13": {
         "title": "Lawyers (Beecrowd 2737)",
+        "type": "oficial",
         "setup": """
             CREATE TABLE lawyers (
                 register INTEGER PRIMARY KEY,
@@ -404,8 +940,9 @@ EXERCISES_DATA: Dict[int, Dict[str, Any]] = {
             ("Average", 12)
         ]
     },
-    14: {
+    "14": {
         "title": "Most Frequent Value (Beecrowd 2993)",
+        "type": "oficial",
         "setup": """
             CREATE TABLE value_table (
                 amount INTEGER
@@ -418,8 +955,9 @@ EXERCISES_DATA: Dict[int, Dict[str, Any]] = {
             (1,)
         ]
     },
-    15: {
+    "15": {
         "title": "Imported Products (Beecrowd 2618)",
+        "type": "oficial",
         "setup": """
             CREATE TABLE products (
                 id INTEGER PRIMARY KEY,
@@ -448,7 +986,7 @@ EXERCISES_DATA: Dict[int, Dict[str, Any]] = {
             (2, 'Sansul SA', 'Av Brasil', 'Rio de Janeiro', 'RJ'),
             (3, 'South Chairs', 'Rua do Moinho', 'Santa Maria', 'RS'),
             (4, 'Elon Electro', 'Rua Apolo', 'São Paulo', 'SP'),
-            (5, 'Mike Electro', 'Rua Pedro da Cunha', 'Curitiba', 'PR');
+            (5, 'Mike Electro', 'Pedro da Cunha', 'Curitiba', 'PR');
 
             CREATE TABLE categories (
                 id INTEGER PRIMARY KEY,
@@ -462,8 +1000,9 @@ EXERCISES_DATA: Dict[int, Dict[str, Any]] = {
             ("TV", "Sansul SA", "Imported")
         ]
     },
-    16: {
+    "16": {
         "title": "Categories with Various Products (Beecrowd 2623)",
+        "type": "oficial",
         "setup": """
             CREATE TABLE products (
                 id INTEGER PRIMARY KEY,
@@ -492,8 +1031,9 @@ EXERCISES_DATA: Dict[int, Dict[str, Any]] = {
             ("Red Chair", "Super Luxury")
         ]
     },
-    17: {
+    "17": {
         "title": "Categorias com Muitos Produtos (Custom)",
+        "type": "oficial",
         "setup": """
             CREATE TABLE products (
                 id INTEGER PRIMARY KEY,
@@ -522,8 +1062,9 @@ EXERCISES_DATA: Dict[int, Dict[str, Any]] = {
             ("Moveis", 3)
         ]
     },
-    18: {
+    "18": {
         "title": "No Rental (Beecrowd 2616)",
+        "type": "oficial",
         "setup": """
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY,
@@ -557,8 +1098,9 @@ EXERCISES_DATA: Dict[int, Dict[str, Any]] = {
             (5, "João Almeida Lima")
         ]
     },
-    19: {
+    "19": {
         "title": "Campeonato Cearense (Beecrowd 2988)",
+        "type": "oficial",
         "setup": """
             CREATE TABLE teams (
                 id INTEGER PRIMARY KEY,
@@ -590,8 +1132,9 @@ EXERCISES_DATA: Dict[int, Dict[str, Any]] = {
             ("GUARANY DE SOBRAL", 3, 0, 3, 0, 0)
         ]
     },
-    20: {
+    "20": {
         "title": "Department Statistics (Beecrowd 2991)",
+        "type": "oficial",
         "setup": """
             CREATE TABLE departamento (
                 cod_dep INTEGER PRIMARY KEY,
@@ -722,23 +1265,25 @@ EXERCISES_DATA: Dict[int, Dict[str, Any]] = {
 }
 
 
-def get_connection(ex_num: int) -> sqlite3.Connection:
-    if ex_num not in EXERCISES_DATA:
-        raise ValueError(f"Exercício {ex_num} não encontrado (1-20 disponíveis).")
+def get_connection(ex_key: Any) -> sqlite3.Connection:
+    key_str = str(ex_key)
+    if key_str not in EXERCISES_DATA:
+        raise ValueError(f"Exercício/Treino '{ex_key}' não encontrado.")
     conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
-    setup_sql = EXERCISES_DATA[ex_num]["setup"]
+    setup_sql = EXERCISES_DATA[key_str]["setup"]
     conn.executescript(setup_sql)
     return conn
 
 
-def show_schema(ex_num: int):
-    conn = get_connection(ex_num)
+def show_schema(ex_key: Any):
+    key_str = str(ex_key)
+    conn = get_connection(key_str)
     cur = conn.cursor()
     cur.execute("SELECT name FROM sqlite_master WHERE type='table';")
     tables = [r[0] for r in cur.fetchall()]
     print(f"\n=======================================================")
-    print(f"  Exercício {ex_num}: {EXERCISES_DATA[ex_num]['title']}")
+    print(f"  {key_str}: {EXERCISES_DATA[key_str]['title']}")
     print(f"=======================================================\n")
     for t in tables:
         print(f"📌 Tabela: {t}")
@@ -752,14 +1297,15 @@ def show_schema(ex_num: int):
         print()
 
 
-def run_query(ex_num: int, query: str):
-    conn = get_connection(ex_num)
+def run_query(ex_key: Any, query: str):
+    key_str = str(ex_key)
+    conn = get_connection(key_str)
     cur = conn.cursor()
     try:
         cur.execute(query)
         rows = cur.fetchall()
         headers = [desc[0] for desc in cur.description] if cur.description else []
-        print(f"\n--- Resultado da Consulta (Exercício {ex_num}) ---")
+        print(f"\n--- Resultado da Consulta ({key_str}) ---")
         if headers:
             print(" | ".join(headers))
             print("-" * (len(" | ".join(headers)) + 6))
@@ -770,10 +1316,11 @@ def run_query(ex_num: int, query: str):
         print(f"❌ Erro ao executar SQL: {e}")
 
 
-def test_query(ex_num: int, query: str):
-    conn = get_connection(ex_num)
+def test_query(ex_key: Any, query: str):
+    key_str = str(ex_key)
+    conn = get_connection(key_str)
     cur = conn.cursor()
-    ex = EXERCISES_DATA[ex_num]
+    ex = EXERCISES_DATA[key_str]
     try:
         cur.execute(query)
         actual_rows = [tuple(r) for r in cur.fetchall()]
@@ -782,7 +1329,7 @@ def test_query(ex_num: int, query: str):
         print(f"❌ Erro de sintaxe/execução SQL: {e}")
         return False
 
-    print(f"\n--- Validação Exercício {ex_num} ---")
+    print(f"\n--- Validação {key_str} ({ex['title']}) ---")
     print(f"Colunas obtidas : {actual_cols}")
     print(f"Colunas esperadas: {ex['expected_columns']}")
     print("\nLinhas obtidas:")
@@ -792,7 +1339,6 @@ def test_query(ex_num: int, query: str):
     for r in ex['expected_rows']:
         print(f"  {r}")
 
-    # Check match (normalize numeric types like 800 vs 800.0)
     match = True
     if len(actual_rows) != len(ex['expected_rows']):
         match = False
@@ -812,40 +1358,45 @@ def test_query(ex_num: int, query: str):
                         break
 
     if match:
-        print("\n✅ SUCESSO! A consulta produziu o resultado exato esperado pelo PDF/Beecrowd!")
+        print("\n✅ SUCESSO! Resultado 100% correto!")
         return True
     else:
-        print("\n⚠️ DIVERGÊNCIA: O resultado não bateu 100% com o Output Sample. Verifique valores, nomes de colunas ou ordenação.")
+        print("\n⚠️ DIVERGÊNCIA: Verifique valores, nomes de colunas ou ordenação.")
         return False
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Uso do db_lab.py:")
-        print("  python3 db_lab.py list                    -> Listar todos os exercícios")
-        print("  python3 db_lab.py schema <num>             -> Ver tabelas e dados do exercício <num>")
-        print("  python3 db_lab.py run <num> \"<SQL>\"        -> Rodar uma consulta livre")
-        print("  python3 db_lab.py test <num> \"<SQL>\"       -> Testar consulta contra o gabarito do PDF")
+        print("  python3 db_lab.py list                    -> Listar todos os treinos e exercícios")
+        print("  python3 db_lab.py schema <id>             -> Ver tabelas (ex: T1.1 ou 1)")
+        print("  python3 db_lab.py run <id> \"<SQL>\"        -> Rodar consulta livre")
+        print("  python3 db_lab.py test <id> \"<SQL>\"       -> Testar consulta contra o gabarito")
         sys.exit(0)
 
     cmd = sys.argv[1].lower()
     if cmd == "list":
-        print("\nLista de Exercícios (Trabalho Prático I):")
+        print("\n--- QUESTÕES DE TREINO (Conceito por Conceito) ---")
         for num, data in EXERCISES_DATA.items():
-            print(f"  {num:2d}. {data['title']}")
+            if data.get("type") == "treino":
+                print(f"  {num:5s}: {data['title']}")
+        print("\n--- LISTA OFICIAL (Beecrowd / Trabalho) ---")
+        for num, data in EXERCISES_DATA.items():
+            if data.get("type") == "oficial":
+                print(f"  Ex {num:2s}: {data['title']}")
         print()
     elif cmd == "schema":
         if len(sys.argv) < 3:
-            print("Informe o número do exercício: python3 db_lab.py schema 1")
+            print("Informe o ID: python3 db_lab.py schema T1.1 ou python3 db_lab.py schema 1")
             sys.exit(1)
-        show_schema(int(sys.argv[2]))
+        show_schema(sys.argv[2])
     elif cmd == "run":
         if len(sys.argv) < 4:
-            print("Informe exercício e query: python3 db_lab.py run 1 \"SELECT * FROM customers\"")
+            print("Informe ID e query: python3 db_lab.py run T1.1 \"SELECT * FROM store_products\"")
             sys.exit(1)
-        run_query(int(sys.argv[2]), sys.argv[3])
+        run_query(sys.argv[2], sys.argv[3])
     elif cmd == "test":
         if len(sys.argv) < 4:
-            print("Informe exercício e query: python3 db_lab.py test 1 \"SELECT name FROM customers WHERE state = 'RS'\"")
+            print("Informe ID e query: python3 db_lab.py test T1.1 \"SELECT ...\"")
             sys.exit(1)
-        test_query(int(sys.argv[2]), sys.argv[3])
+        test_query(sys.argv[2], sys.argv[3])

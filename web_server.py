@@ -26,7 +26,7 @@ class StudioAPIHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json_response(self.get_exercises_summary())
         elif self.path.startswith("/api/exercise/"):
             try:
-                ex_id = int(self.path.split("/")[-1])
+                ex_id = self.path.split("/")[-1]
                 self.send_json_response(self.get_exercise_details(ex_id))
             except Exception as e:
                 self.send_json_response({"error": str(e)}, status=400)
@@ -39,7 +39,7 @@ class StudioAPIHandler(http.server.SimpleHTTPRequestHandler):
             body = self.rfile.read(content_length).decode("utf-8")
             try:
                 data = json.loads(body)
-                ex_id = int(data.get("exerciseId", 1))
+                ex_id = str(data.get("exerciseId", "1"))
                 query = data.get("query", "")
                 result = self.execute_query(ex_id, query)
                 self.send_json_response(result)
@@ -50,7 +50,7 @@ class StudioAPIHandler(http.server.SimpleHTTPRequestHandler):
             body = self.rfile.read(content_length).decode("utf-8")
             try:
                 data = json.loads(body)
-                ex_id = int(data.get("exerciseId", 1))
+                ex_id = str(data.get("exerciseId", "1"))
                 query = data.get("query", "")
                 result = self.validate_query(ex_id, query)
                 self.send_json_response(result)
@@ -83,14 +83,15 @@ class StudioAPIHandler(http.server.SimpleHTTPRequestHandler):
             summary.append({
                 "id": ex_id,
                 "title": info["title"],
+                "type": info.get("type", "oficial"),
                 "expectedColumns": info["expected_columns"],
                 "expectedRowCount": len(info["expected_rows"])
             })
         return summary
 
-    def get_exercise_details(self, ex_id: int):
+    def get_exercise_details(self, ex_id: str):
         if ex_id not in EXERCISES_DATA:
-            return {"error": f"Exercício {ex_id} não encontrado"}
+            return {"error": f"Exercício/Treino '{ex_id}' não encontrado"}
         info = EXERCISES_DATA[ex_id]
         conn = get_connection(ex_id)
         cur = conn.cursor()
@@ -111,12 +112,13 @@ class StudioAPIHandler(http.server.SimpleHTTPRequestHandler):
         return {
             "id": ex_id,
             "title": info["title"],
+            "type": info.get("type", "oficial"),
             "expectedColumns": info["expected_columns"],
             "expectedRows": info["expected_rows"],
             "tables": schema_tables
         }
 
-    def execute_query(self, ex_id: int, query: str):
+    def execute_query(self, ex_id: str, query: str):
         if not query.strip():
             return {"success": False, "error": "A consulta SQL está vazia."}
         start = time.time()
@@ -142,7 +144,7 @@ class StudioAPIHandler(http.server.SimpleHTTPRequestHandler):
                 "elapsedMs": elapsed_ms
             }
 
-    def validate_query(self, ex_id: int, query: str):
+    def validate_query(self, ex_id: str, query: str):
         exec_res = self.execute_query(ex_id, query)
         if not exec_res["success"]:
             return {
@@ -179,7 +181,6 @@ class StudioAPIHandler(http.server.SimpleHTTPRequestHandler):
                     break
                 for j, (a, b) in enumerate(zip(act, exp)):
                     try:
-                        # Try float comparison for numbers
                         if round(float(a), 2) != round(float(b), 2):
                             matched = False
                             diff_reason = f"Valor diferente na linha {i+1}, coluna {actual_cols[j]}: esperado '{b}', obtido '{a}'."
@@ -194,7 +195,7 @@ class StudioAPIHandler(http.server.SimpleHTTPRequestHandler):
 
         return {
             "matched": matched,
-            "diffReason": diff_reason if not matched else "Sucesso! Resultado idêntico ao Output Sample.",
+            "diffReason": diff_reason if not matched else "Sucesso! Resultado idêntico ao esperado.",
             "execResult": exec_res,
             "expectedColumns": expected_cols,
             "expectedRows": expected_rows

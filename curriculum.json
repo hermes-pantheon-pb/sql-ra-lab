@@ -37,7 +37,8 @@
           "sqlKeyword": "FROM → WHERE → SELECT"
         }
       ],
-      "exercises": [1, 2]
+      "trainingExercises": ["T1.1", "T1.2", "T1.3", "T1.4", "T1.5", "T1.6"],
+      "assignmentExercises": ["1", "2"]
     },
     {
       "id": 2,
@@ -70,7 +71,8 @@
           "sqlKeyword": "ROUND(..., 2), AS \"alias\""
         }
       ],
-      "exercises": [3, 4, 5]
+      "trainingExercises": ["T2.1", "T2.2", "T2.3"],
+      "assignmentExercises": ["3", "4", "5"]
     },
     {
       "id": 3,
@@ -103,7 +105,8 @@
           "sqlKeyword": "p.name AS ..., c.name AS ..."
         }
       ],
-      "exercises": [6, 7, 8, 9, 15]
+      "trainingExercises": ["T3.1", "T3.2", "T3.3"],
+      "assignmentExercises": ["6", "7", "8", "9", "15"]
     },
     {
       "id": 4,
@@ -130,7 +133,8 @@
           "sqlKeyword": "WHERE vs HAVING"
         }
       ],
-      "exercises": [10, 17]
+      "trainingExercises": ["T4.1", "T4.2"],
+      "assignmentExercises": ["10", "17"]
     },
     {
       "id": 5,
@@ -157,7 +161,8 @@
           "sqlKeyword": "IN (v1, v2, ...)"
         }
       ],
-      "exercises": [11, 12, 16]
+      "trainingExercises": ["T5.1", "T5.2"],
+      "assignmentExercises": ["11", "12", "16"]
     },
     {
       "id": 6,
@@ -184,7 +189,8 @@
           "sqlKeyword": "GROUP BY ... ORDER BY COUNT(*) DESC LIMIT 1"
         }
       ],
-      "exercises": [13, 14, 18]
+      "trainingExercises": ["T6.1", "T6.2"],
+      "assignmentExercises": ["13", "14", "18"]
     },
     {
       "id": 7,
@@ -211,11 +217,342 @@
           "sqlKeyword": "COALESCE(val, 0)"
         }
       ],
-      "exercises": [19, 20]
+      "trainingExercises": ["T7.1", "T7.2"],
+      "assignmentExercises": ["19", "20"]
     }
   ],
-  "assignmentExercises": {
+  "exercises": {
+    "T1.1": {
+      "id": "T1.1",
+      "type": "treino",
+      "moduleId": 1,
+      "badgeTag": "Treino: Projeção & Cálculos",
+      "title": "Expressões e Apelidos na Projeção",
+      "difficulty": "Treino Básico",
+      "statement": "[TÓPICO EM TREINO: Projeção (π), Cálculos na Projeção e Apelidos (AS)]\nO setor de vendas vai aplicar um desconto de 10% em todos os produtos da tabela store_products.\nMostre o nome (name), o preço original (price) e crie uma coluna calculada chamada discount_price contendo o preço com 10% de desconto (preço multiplicado por 0.9).",
+      "pedagogicalIntuition": "Em SQL, a Projeção (SELECT) não apenas escolhe colunas existentes, mas também avalia expressões aritméticas. Use 'price * 0.9 AS discount_price' para projetar o valor transformado.",
+      "raExpression": "π_{name, price, price * 0.9 \\to discount\\_price}(store\\_products)",
+      "raBreakdown": [
+        {"operator": "store_products", "role": "Relação de entrada com dados de estoque."},
+        {"operator": "π com expressão", "role": "Projeção generalizada que inclui o cálculo derivado de desconto e renomeia o atributo."}
+      ],
+      "solutionSql": "SELECT name, price, price * 0.9 AS discount_price\nFROM store_products;"
+    },
+    "T1.2": {
+      "id": "T1.2",
+      "type": "treino",
+      "moduleId": 1,
+      "badgeTag": "Treino: Faixas com BETWEEN",
+      "title": "Intervalos Contínuos com BETWEEN",
+      "difficulty": "Treino Básico",
+      "statement": "[TÓPICO EM TREINO: Seleção (σ) e Predicado de Faixa BETWEEN ... AND ...]\nO setor financeiro quer analisar produtos de custo intermediário da tabela store_products.\nMostre o name e o price dos produtos cujo preço esteja entre 100 e 2000 (inclusive), utilizando obrigatoriamente a sintaxe BETWEEN.",
+      "pedagogicalIntuition": "O operador 'BETWEEN min AND max' é equivalente a 'col >= min AND col <= max'. Ele avalia se o valor está contido no intervalo fechado [min, max].",
+      "raExpression": "π_{name, price}(\\sigma_{price \\ge 100 \\land price \\le 2000}(store\\_products))",
+      "raBreakdown": [
+        {"operator": "store_products", "role": "Relação de produtos da loja."},
+        {"operator": "σ_{price BETWEEN 100 AND 2000}", "role": "Seleção que filtra tuplas pertencentes ao intervalo numérico fechado."},
+        {"operator": "π_{name, price}", "role": "Projeção vertical dos atributos de identificação e valor."}
+      ],
+      "solutionSql": "SELECT name, price\nFROM store_products\nWHERE price BETWEEN 100 AND 2000;"
+    },
+    "T1.3": {
+      "id": "T1.3",
+      "type": "treino",
+      "moduleId": 1,
+      "badgeTag": "Treino: Pertença com IN",
+      "title": "Pertença a Conjunto Discreto com IN",
+      "difficulty": "Treino Básico",
+      "statement": "[TÓPICO EM TREINO: Seleção (σ) e Pertencimento a Conjunto com IN (...)]\nA diretoria de RH quer um levantamento dos funcionários da tabela employees que pertencem aos setores estratégicos: 'TI', 'RH' ou 'Financeiro'.\nMostre o name e o department dos colaboradores que pertencem a um desses três setores usando o operador IN.",
+      "pedagogicalIntuition": "Ao invés de escrever 'department = 'TI' OR department = 'RH' OR ...', o operador 'IN (lista)' testa se o valor pertence ao conjunto de valores discretos de forma limpa e otimizada.",
+      "raExpression": "π_{name, department}(\\sigma_{department \\in \\{'TI', 'RH', 'Financeiro'\\}}(employees))",
+      "raBreakdown": [
+        {"operator": "employees", "role": "Relação de funcionários da empresa."},
+        {"operator": "σ_{department IN (...)}", "role": "Seleção que avalia a pertinência ao conjunto de departamentos alvo."},
+        {"operator": "π_{name, department}", "role": "Projeção do nome e do departamento correspondente."}
+      ],
+      "solutionSql": "SELECT name, department\nFROM employees\nWHERE department IN ('TI', 'RH', 'Financeiro');"
+    },
+    "T1.4": {
+      "id": "T1.4",
+      "type": "treino",
+      "moduleId": 1,
+      "badgeTag": "Treino: Padrões com LIKE",
+      "title": "Busca de Padrões de Texto com LIKE",
+      "difficulty": "Treino Básico",
+      "statement": "[TÓPICO EM TREINO: Seleção (σ) e Casamento de Padrões com LIKE e Curingas]\nO setor de atendimento precisa encontrar todos os clientes da tabela clients cujo nome inicia com o prefixo 'Mar' (por exemplo, Mariana, Marcos, Mario).\nMostre o name e o email desses clientes utilizando o operador LIKE.",
+      "pedagogicalIntuition": "O curinga '%' representa zero, um ou múltiplos caracteres quaisquer. Portanto, 'Mar%' casa com qualquer string que inicie com 'Mar'. Se quiséssemos terminar com 'Mar', usaríamos '%Mar'.",
+      "raExpression": "π_{name, email}(\\sigma_{name \\text{ LIKE } 'Mar\\%'}(clients))",
+      "raBreakdown": [
+        {"operator": "clients", "role": "Relação de clientes cadastrados."},
+        {"operator": "σ_{name LIKE 'Mar%'}", "role": "Seleção que filtra tuplas pelo casamento de padrão textual prefixal."},
+        {"operator": "π_{name, email}", "role": "Projeção dos dados de contato solicitados."}
+      ],
+      "solutionSql": "SELECT name, email\nFROM clients\nWHERE name LIKE 'Mar%';"
+    },
+    "T1.5": {
+      "id": "T1.5",
+      "type": "treino",
+      "moduleId": 1,
+      "badgeTag": "Treino: Nulos com IS NULL",
+      "title": "Tratamento de Nulos com IS NULL",
+      "difficulty": "Treino Básico",
+      "statement": "[TÓPICO EM TREINO: Lógica Tri-Valorada e Teste de Ausência com IS NULL]\nA equipe de suporte identificou que alguns clientes não têm telefone cadastrado na tabela clients_contact.\nMostre o id e o name dos clientes cujo telefone é NULO (não cadastrado). Lembre-se: em bancos de dados relacionais, 'phone = NULL' NUNCA funciona; use a sintaxe correta 'IS NULL'!",
+      "pedagogicalIntuition": "Em SQL vigora a Lógica Tri-Valorada. Como NULL representa 'desconhecido', 'NULL = NULL' é UNKNOWN (não é verdadeiro). Para testar a presença ou ausência de nulo, a única sintaxe válida é 'IS NULL' ou 'IS NOT NULL'.",
+      "raExpression": "π_{id, name}(\\sigma_{phone \\text{ IS NULL}}(clients\\_contact))",
+      "raBreakdown": [
+        {"operator": "clients_contact", "role": "Relação com telefones e emails de clientes."},
+        {"operator": "σ_{phone IS NULL}", "role": "Seleção que preserva tuplas onde o atributo phone é nulo/ausente."},
+        {"operator": "π_{id, name}", "role": "Projeção do identificador e do nome do cliente."}
+      ],
+      "solutionSql": "SELECT id, name\nFROM clients_contact\nWHERE phone IS NULL;"
+    },
+    "T1.6": {
+      "id": "T1.6",
+      "type": "treino",
+      "moduleId": 1,
+      "badgeTag": "Treino: Precedência Booleana",
+      "title": "Precedência de Operadores Lógicos (NOT, AND, OR)",
+      "difficulty": "Treino Básico",
+      "statement": "[TÓPICO EM TREINO: Precedência Booleana e Agrupamento com Parênteses]\nA diretoria busca colaboradores da tabela employees que trabalhem no departamento 'TI' OU 'Vendas', mas com um requisito estrito: o salário (salary) deve ser superior a 5500.\nMostre o name, department e salary. Atenção: no SQL, 'AND' tem precedência sobre 'OR'. Use parênteses para forçar que o teste de departamento ocorra antes do teste salarial!",
+      "pedagogicalIntuition": "Se você escrever 'WHERE dep = 'TI' OR dep = 'Vendas' AND salary > 5500', o banco executará '(Vendas AND salary > 5500) OR TI', trazendo qualquer pessoa de TI mesmo com salário baixo! O agrupamento correto é '(dep = 'TI' OR dep = 'Vendas') AND salary > 5500'.",
+      "raExpression": "π_{name, department, salary}(\\sigma_{(department = 'TI' \\lor department = 'Vendas') \\land salary > 5500}(employees))",
+      "raBreakdown": [
+        {"operator": "employees", "role": "Relação de funcionários."},
+        {"operator": "σ_{(TI ∨ Vendas) ∧ salary > 5500}", "role": "Seleção com conjunção que prioriza a disjunção setorial entre parênteses."},
+        {"operator": "π_{name, department, salary}", "role": "Projeção dos atributos de interesse."}
+      ],
+      "solutionSql": "SELECT name, department, salary\nFROM employees\nWHERE (department = 'TI' OR department = 'Vendas') AND salary > 5500;"
+    },
+    "T2.1": {
+      "id": "T2.1",
+      "type": "treino",
+      "moduleId": 2,
+      "badgeTag": "Treino: COUNT(*) vs COUNT(col)",
+      "title": "Contagem Total vs Contagem de Atributo Não-Nulo",
+      "difficulty": "Treino Básico",
+      "statement": "[TÓPICO EM TREINO: Agregação γ: Diferença entre COUNT(*) e COUNT(coluna)]\nA associação quer saber o total de membros cadastrados e quantos deles forneceram um email válido na tabela members.\nMostre em uma única linha o total de membros apelidado de total_members (usando COUNT(*)) e o total de membros com email cadastrado apelidado de members_with_email (usando COUNT(email)).",
+      "pedagogicalIntuition": "COUNT(*) conta todas as tuplas da relação, incluindo tuplas com valores nulos. Já COUNT(coluna) conta apenas as linhas onde aquela coluna específica NÃO É NULA. É assim que medimos preenchimento de campos!",
+      "raExpression": "γ_{COUNT(*) \\to total\\_members, COUNT(email) \\to members\\_with\\_email}(members)",
+      "raBreakdown": [
+        {"operator": "members", "role": "Relação de membros associados."},
+        {"operator": "γ_{COUNT(*), COUNT(email)}", "role": "Agregação global demonstrando a supressão de nulos no segundo argumento."}
+      ],
+      "solutionSql": "SELECT COUNT(*) AS total_members, COUNT(email) AS members_with_email\nFROM members;"
+    },
+    "T2.2": {
+      "id": "T2.2",
+      "type": "treino",
+      "moduleId": 2,
+      "badgeTag": "Treino: COUNT(DISTINCT)",
+      "title": "Contagem de Valores Únicos com COUNT(DISTINCT)",
+      "difficulty": "Treino Básico",
+      "statement": "[TÓPICO EM TREINO: Agregação γ com Eliminação Prévia de Duplicatas]\nNa tabela orders_sample, vários clientes fizeram compras repetidas.\nCalcule quantos clientes distintos já fizeram compras na loja, nomeando a coluna de saída como unique_buyers.",
+      "pedagogicalIntuition": "COUNT(client_id) contaria 5 (o total de pedidos). Mas queremos saber quantas pessoas únicas compraram. 'COUNT(DISTINCT client_id)' remove as chaves repetidas antes da contagem escalar.",
+      "raExpression": "γ_{COUNT(\\text{DISTINCT } client\\_id) \\to unique\\_buyers}(orders\\_sample)",
+      "raBreakdown": [
+        {"operator": "orders_sample", "role": "Relação de pedidos com repetição de compradores."},
+        {"operator": "γ_{COUNT(DISTINCT)}", "role": "Agregação que aplica deduplicação na projeção antes da contagem."}
+      ],
+      "solutionSql": "SELECT COUNT(DISTINCT client_id) AS unique_buyers\nFROM orders_sample;"
+    },
+    "T2.3": {
+      "id": "T2.3",
+      "type": "treino",
+      "moduleId": 2,
+      "badgeTag": "Treino: Múltiplas Agregações",
+      "title": "Múltiplas Agregações Globais e Arredondamento",
+      "difficulty": "Treino Básico",
+      "statement": "[TÓPICO EM TREINO: Agregação γ: MIN, MAX, SUM e ROUND(AVG, 2)]\nO setor contábil quer o sumário estatístico das vendas na tabela sales.\nExiba em uma única linha: o menor valor como menor, o maior valor como maior, a soma de todas as vendas como soma e a média com 2 casas decimais como media.",
+      "pedagogicalIntuition": "Todas as funções de agregação podem coexistir na cláusula SELECT se operarem sobre a tabela inteira sem colunas individuais não-agregadas. Use ROUND(AVG(amount), 2) para garantir precisão.",
+      "raExpression": "γ_{MIN(amount) \\to menor, MAX(amount) \\to maior, SUM(amount) \\to soma, ROUND(AVG(amount), 2) \\to media}(sales)",
+      "raBreakdown": [
+        {"operator": "sales", "role": "Relação de vendas realizadas."},
+        {"operator": "γ com múltiplas funções", "role": "Colapso escalar computando métricas descritivas completas."}
+      ],
+      "solutionSql": "SELECT MIN(amount) AS menor, MAX(amount) AS maior, SUM(amount) AS soma, ROUND(AVG(amount), 2) AS media\nFROM sales;"
+    },
+    "T3.1": {
+      "id": "T3.1",
+      "type": "treino",
+      "moduleId": 3,
+      "badgeTag": "Treino: Equi-Join Básico",
+      "title": "Equi-Join Básico de 2 Tabelas com Apelidos",
+      "difficulty": "Treino Básico",
+      "statement": "[TÓPICO EM TREINO: Junção Relacional (⨝): Conexão PK = FK e Apelidos]\nUna a tabela de colaboradores staff com a tabela de departamentos depts.\nMostre o nome do colaborador (name) e o nome do seu departamento (dept_name) usando a sintaxe INNER JOIN ... ON ligando staff.dept_id = depts.id.",
+      "pedagogicalIntuition": "Uma junção cruza tuplas das duas tabelas mantendo apenas os pares onde a condição de relacionamento ('ON s.dept_id = d.id') é verdadeira. Usamos apelidos curtos ('staff s', 'depts d') para legibilidade.",
+      "raExpression": "π_{name, dept\\_name}(staff ⨝_{staff.dept\\_id = depts.id} depts)",
+      "raBreakdown": [
+        {"operator": "staff ⨝ depts", "role": "Equi-junção ligando a chave estrangeira do empregado à chave primária do departamento."},
+        {"operator": "π_{name, dept_name}", "role": "Projeção do nome do empregado e do nome do departamento associado."}
+      ],
+      "solutionSql": "SELECT s.name, d.dept_name\nFROM staff s\nJOIN depts d ON s.dept_id = d.id;"
+    },
+    "T3.2": {
+      "id": "T3.2",
+      "type": "treino",
+      "moduleId": 3,
+      "badgeTag": "Treino: JOIN com Filtro",
+      "title": "Junção com Filtro no WHERE em Tabela Relacionada",
+      "difficulty": "Treino Básico",
+      "statement": "[TÓPICO EM TREINO: Composição: Junção (⨝) combinada com Seleção (σ)]\nUtilizando as tabelas staff e depts, encontre os nomes dos colaboradores que trabalham especificamente no departamento 'Tecnologia'.\nMostre apenas a coluna name dos colaboradores.",
+      "pedagogicalIntuition": "Primeiro executamos o cruzamento via JOIN para conectar a pessoa ao seu departamento. Em seguida, na cláusula WHERE, aplicamos o filtro textual sobre o departamento: 'WHERE d.dept_name = 'Tecnologia''.",
+      "raExpression": "π_{staff.name}(\\sigma_{depts.dept\\_name = 'Tecnologia'}(staff ⨝_{staff.dept\\_id = depts.id} depts))",
+      "raBreakdown": [
+        {"operator": "staff ⨝ depts", "role": "Junção das relações de funcionários e departamentos."},
+        {"operator": "σ_{dept_name = 'Tecnologia'}", "role": "Seleção pelo nome descritivo do departamento."},
+        {"operator": "π_{name}", "role": "Projeção apenas do nome do colaborador."}
+      ],
+      "solutionSql": "SELECT s.name\nFROM staff s\nJOIN depts d ON s.dept_id = d.id\nWHERE d.dept_name = 'Tecnologia';"
+    },
+    "T3.3": {
+      "id": "T3.3",
+      "type": "treino",
+      "moduleId": 3,
+      "badgeTag": "Treino: Junção de 3 Tabelas",
+      "title": "Junção Encadeada de 3 Tabelas com Desambiguação",
+      "difficulty": "Treino Médio",
+      "statement": "[TÓPICO EM TREINO: Multi-Join ((A ⨝ B) ⨝ C) e Desambiguação de Atributos]\nTemos 3 tabelas universitárias: students (id, name), courses (id, title) e enrollments (student_id, course_id, grade).\nMostre o nome do aluno apelidado de student_name, o título do curso apelidado de course_title e a nota (grade) juntando as três tabelas.",
+      "pedagogicalIntuition": "Encadear junções é direto: 'FROM enrollments e JOIN students s ON e.student_id = s.id JOIN courses c ON e.course_id = c.id'. Renomeie as colunas para evitar conflitos de nomenclatura.",
+      "raExpression": "π_{students.name \\to student\\_name, courses.title \\to course\\_title, enrollments.grade}((enrollments ⨝ students) ⨝ courses)",
+      "raBreakdown": [
+        {"operator": "enrollments ⨝ students ⨝ courses", "role": "Junção tripla conectando a tabela associativa de matrículas às duas entidades mestras."},
+        {"operator": "π com renomeação", "role": "Formata a saída final com nomes descritivos claros."}
+      ],
+      "solutionSql": "SELECT s.name AS student_name, c.title AS course_title, e.grade\nFROM enrollments e\nJOIN students s ON e.student_id = s.id\nJOIN courses c ON e.course_id = c.id;"
+    },
+    "T4.1": {
+      "id": "T4.1",
+      "type": "treino",
+      "moduleId": 4,
+      "badgeTag": "Treino: GROUP BY Básico",
+      "title": "Agrupamento Básico com GROUP BY e COUNT(*)",
+      "difficulty": "Treino Básico",
+      "statement": "[TÓPICO EM TREINO: Agrupamento (_{G}γ_{F}): Particionamento em Grupos e Contagem]\nNa tabela inventory temos itens de tecnologia e suas categorias (category).\nAgrupe os produtos por categoria e exiba o nome da category e a quantidade total de produtos cadastrados em cada uma, apelidando a contagem de total_items.",
+      "pedagogicalIntuition": "O operador GROUP BY particiona a tabela em baldes. Para cada balde formado pela categoria, o COUNT(*) calcula a quantidade de registros daquele balde. Lembre-se: 'category' está no SELECT porque está no GROUP BY!",
+      "raExpression": "_{category}\\gamma_{COUNT(*) \\to total\\_items}(inventory)",
+      "raBreakdown": [
+        {"operator": "inventory", "role": "Relação de itens em estoque."},
+        {"operator": "_{category}γ_{COUNT(*)}", "role": "Agrupamento particionado pelo atributo category com contagem agregada por partição."}
+      ],
+      "solutionSql": "SELECT category, COUNT(*) AS total_items\nFROM inventory\nGROUP BY category;"
+    },
+    "T4.2": {
+      "id": "T4.2",
+      "type": "treino",
+      "moduleId": 4,
+      "badgeTag": "Treino: Filtro de Grupos com HAVING",
+      "title": "Filtro de Grupos com HAVING (COUNT >= N)",
+      "difficulty": "Treino Básico",
+      "statement": "[TÓPICO EM TREINO: Filtro Pós-Agrupamento com HAVING]\nUtilizando a mesma tabela inventory, exiba a category e a contagem total_items, MAS APENAS para as categorias que possuem 3 ou mais produtos cadastrados (COUNT(*) >= 3).\nUtilize a cláusula HAVING.",
+      "pedagogicalIntuition": "Você não pode usar 'WHERE COUNT(*) >= 3' porque o WHERE opera linha por linha antes do agrupamento existir! O filtro sobre o resultado da agregação deve ser feito com 'HAVING COUNT(*) >= 3'.",
+      "raExpression": "\\sigma_{total\\_items \\ge 3}(_{category}\\gamma_{COUNT(*) \\to total\\_items}(inventory))",
+      "raBreakdown": [
+        {"operator": "inventory", "role": "Relação base de estoque."},
+        {"operator": "_{category}γ_{COUNT(*)}", "role": "Agrupa por categoria e conta os itens."},
+        {"operator": "σ_{total_items >= 3}", "role": "Filtro pós-agregação que descarta categorias com menos de 3 produtos."}
+      ],
+      "solutionSql": "SELECT category, COUNT(*) AS total_items\nFROM inventory\nGROUP BY category\nHAVING COUNT(*) >= 3;"
+    },
+    "T5.1": {
+      "id": "T5.1",
+      "type": "treino",
+      "moduleId": 5,
+      "badgeTag": "Treino: ORDER BY Múltiplo",
+      "title": "Ordenação Ascendente e Descendente (ORDER BY)",
+      "difficulty": "Treino Básico",
+      "statement": "[TÓPICO EM TREINO: Operador Tau (τ): Multi-Column Ordering (ASC e DESC)]\nNa tabela players temos a pontuação (score) e a idade (age) dos competidores.\nOrdene a lista de jogadores de modo que o maior score venha primeiro (ordem decrescente - DESC). Em caso de empate na pontuação, desempatador pelo jogador mais jovem primeiro (age em ordem crescente - ASC). Mostre name, score e age.",
+      "pedagogicalIntuition": "O operador Tau (τ) aceita múltiplos critérios ordenados por prioridade: 'ORDER BY score DESC, age ASC'. Se houver empate na primeira coluna, a segunda coluna decide.",
+      "raExpression": "\\tau_{score \\downarrow, age \\uparrow}(\\pi_{name, score, age}(players))",
+      "raBreakdown": [
+        {"operator": "players", "role": "Relação de jogadores e estatísticas."},
+        {"operator": "π_{name, score, age}", "role": "Projeção dos atributos de interesse."},
+        {"operator": "τ_{score DESC, age ASC}", "role": "Ordenação hierárquica por pontuação e idade."}
+      ],
+      "solutionSql": "SELECT name, score, age\nFROM players\nORDER BY score DESC, age ASC;"
+    },
+    "T5.2": {
+      "id": "T5.2",
+      "type": "treino",
+      "moduleId": 5,
+      "badgeTag": "Treino: Intervalos de Datas",
+      "title": "Filtragem de Intervalos de Datas (ISO 8601)",
+      "difficulty": "Treino Básico",
+      "statement": "[TÓPICO EM TREINO: Filtro Temporal: Comparações Cronológicas Diretas]\nA tabela logs registra eventos do sistema com a coluna log_date no formato 'YYYY-MM-DD'.\nSelecione o event e o log_date de todos os eventos que ocorreram especificamente durante o mês de maio de 2023 (ou seja, de 2023-05-01 até 2023-05-31 inclusive).",
+      "pedagogicalIntuition": "Como as datas seguem o padrão ISO 'AAAA-MM-DD', comparações lexicográficas funcionam perfeitamente: 'WHERE log_date >= '2023-05-01' AND log_date <= '2023-05-31''.",
+      "raExpression": "π_{event, log\\_date}(\\sigma_{log\\_date \\ge '2023-05-01' \\land log\\_date \\le '2023-05-31'}(logs))",
+      "raBreakdown": [
+        {"operator": "logs", "role": "Relação de auditoria de eventos."},
+        {"operator": "σ_{data no mês de maio/2023}", "role": "Seleção por intervalo temporal fechado."},
+        {"operator": "π_{event, log_date}", "role": "Projeção do evento e de sua data de ocorrência."}
+      ],
+      "solutionSql": "SELECT event, log_date\nFROM logs\nWHERE log_date >= '2023-05-01' AND log_date <= '2023-05-31';"
+    },
+    "T6.1": {
+      "id": "T6.1",
+      "type": "treino",
+      "moduleId": 6,
+      "badgeTag": "Treino: Anti-Join",
+      "title": "Anti-Junção com LEFT JOIN + IS NULL",
+      "difficulty": "Treino Médio",
+      "statement": "[TÓPICO EM TREINO: Anti-Junção (▷) / Diferença (-): Registros sem Correspondência]\nTemos a tabela users e a tabela purchases (que guarda compras associadas ao user_id).\nMostre o id e o name dos usuários que NUNCA fizeram nenhuma compra. Utilize o padrão clássico de Anti-Join com LEFT JOIN e IS NULL.",
+      "pedagogicalIntuition": "O LEFT JOIN preserva todos os usuários. Para os usuários sem compra, as colunas de purchases chegam preenchidas com NULL. Filtrar com 'WHERE p.id IS NULL' seleciona cirurgicamente apenas quem não comprou!",
+      "raExpression": "π_{id, name}(users ▷_{users.id = purchases.user\\_id} purchases)",
+      "raBreakdown": [
+        {"operator": "users ▷ purchases", "role": "Anti-Semi-Join: retorna tuplas de users para as quais não existe nenhuma tupla correspondente em purchases."},
+        {"operator": "π_{id, name}", "role": "Projeta identificador e nome do usuário sem compras."}
+      ],
+      "solutionSql": "SELECT u.id, u.name\nFROM users u\nLEFT JOIN purchases p ON u.id = p.user_id\nWHERE p.id IS NULL;"
+    },
+    "T6.2": {
+      "id": "T6.2",
+      "type": "treino",
+      "moduleId": 6,
+      "badgeTag": "Treino: UNION ALL",
+      "title": "Empilhamento de Conjuntos com UNION ALL",
+      "difficulty": "Treino Básico",
+      "statement": "[TÓPICO EM TREINO: União de Relações (∪): Concatenação Vertical de Consultas]\nA empresa possui vendas regionais em duas tabelas separadas: north_sales (seller, total) e south_sales (seller, total).\nEmpilhe as vendas das duas regiões em um relatório unificado com as colunas seller e total utilizando o operador UNION ALL.",
+      "pedagogicalIntuition": "O operador UNION ALL concatena diretamente os resultados das duas consultas sem o custo computacional de ordenação para remoção de duplicatas (que o UNION puro faria).",
+      "raExpression": "north\\_sales ∪ south\\_sales",
+      "raBreakdown": [
+        {"operator": "north_sales ∪ south_sales", "role": "União de conjuntos com esquemas compatíveis unificando os dados das duas regiões."}
+      ],
+      "solutionSql": "SELECT seller, total FROM north_sales\nUNION ALL\nSELECT seller, total FROM south_sales;"
+    },
+    "T7.1": {
+      "id": "T7.1",
+      "type": "treino",
+      "moduleId": 7,
+      "badgeTag": "Treino: CASE WHEN",
+      "title": "Transformação Condicional com CASE WHEN",
+      "difficulty": "Treino Médio",
+      "statement": "[TÓPICO EM TREINO: Lógica Condicional (IF-ELSE Relacional) na Projeção]\nNa tabela students_notes temos as notas dos alunos (score).\nMostre o name do aluno e uma coluna chamada status calculada com CASE WHEN seguindo a regra:\n- Se score >= 7.0, status deve ser 'Aprovado'\n- Se score >= 5.0, status deve ser 'Recuperacao'\n- Caso contrário (ELSE), status deve ser 'Reprovado'.",
+      "pedagogicalIntuition": "O CASE WHEN é a expressão condicional do SQL. Ele avalia as cláusulas WHEN de cima para baixo e para no primeiro critério que for verdadeiro. O ELSE captura os casos remanescentes.",
+      "raExpression": "π_{name, CASE WHEN score \\ge 7.0 THEN 'Aprovado' ... \\to status}(students\\_notes)",
+      "raBreakdown": [
+        {"operator": "students_notes", "role": "Relação de notas acadêmicas."},
+        {"operator": "π com CASE WHEN", "role": "Projeção generalizada aplicando mapeamento condicional em tempo de execução."}
+      ],
+      "solutionSql": "SELECT name,\n       CASE\n         WHEN score >= 7.0 THEN 'Aprovado'\n         WHEN score >= 5.0 THEN 'Recuperacao'\n         ELSE 'Reprovado'\n       END AS status\nFROM students_notes;"
+    },
+    "T7.2": {
+      "id": "T7.2",
+      "type": "treino",
+      "moduleId": 7,
+      "badgeTag": "Treino: COALESCE",
+      "title": "Substituição Segura de Nulos com COALESCE",
+      "difficulty": "Treino Básico",
+      "statement": "[TÓPICO EM TREINO: Prevenção de Nulos em Cálculos Aritméticos com COALESCE]\nNa tabela accounts temos o titular da conta (holder), o saldo (balance) e um bônus promocional (bonus), onde contas sem promoção possuem bonus igual a NULL.\nMostre o holder e o saldo total (total_funds) calculado pela soma de balance + bonus. Utilize COALESCE(bonus, 0) para evitar que a soma com nulo resulte em nulo!",
+      "pedagogicalIntuition": "Em aritmética SQL, '1000 + NULL' resulta em NULL! Para garantir que uma conta com bônus nulo some 1000 + 0 = 1000, usamos 'COALESCE(bonus, 0)', que substitui o valor por 0 se ele for nulo.",
+      "raExpression": "π_{holder, balance + COALESCE(bonus, 0) \\to total\\_funds}(accounts)",
+      "raBreakdown": [
+        {"operator": "accounts", "role": "Relação bancária de saldos e bônus."},
+        {"operator": "π com COALESCE", "role": "Projeção com substituição de nulo protegendo a integridade da operação aritmética."}
+      ],
+      "solutionSql": "SELECT holder, balance + COALESCE(bonus, 0) AS total_funds\nFROM accounts;"
+    },
     "1": {
+      "id": "1",
+      "type": "oficial",
       "beecrowd": "2602",
       "title": "Clientes por Estado",
       "moduleId": 1,
@@ -231,6 +568,8 @@
       "solutionSql": "SELECT name\nFROM customers\nWHERE state = 'RS';"
     },
     "2": {
+      "id": "2",
+      "type": "oficial",
       "beecrowd": "2604",
       "title": "Under 10 or Greater Than 100",
       "moduleId": 1,
@@ -246,6 +585,8 @@
       "solutionSql": "SELECT id, name\nFROM products\nWHERE price < 10 OR price > 100;"
     },
     "3": {
+      "id": "3",
+      "type": "oficial",
       "beecrowd": "2608",
       "title": "Higher and Lower Price",
       "moduleId": 2,
@@ -260,6 +601,8 @@
       "solutionSql": "SELECT MAX(price) AS \"price (maior)\", MIN(price) AS \"price (menor)\"\nFROM products;"
     },
     "4": {
+      "id": "4",
+      "type": "oficial",
       "beecrowd": "2610",
       "title": "Average Value of Products",
       "moduleId": 2,
@@ -274,6 +617,8 @@
       "solutionSql": "SELECT ROUND(AVG(price), 2) AS price\nFROM products;"
     },
     "5": {
+      "id": "5",
+      "type": "oficial",
       "beecrowd": "2624",
       "title": "Number of Cities per Customers",
       "moduleId": 2,
@@ -288,6 +633,8 @@
       "solutionSql": "SELECT COUNT(DISTINCT city) AS count\nFROM customers;"
     },
     "6": {
+      "id": "6",
+      "type": "oficial",
       "beecrowd": "2622",
       "title": "Legal Person",
       "moduleId": 3,
@@ -302,6 +649,8 @@
       "solutionSql": "SELECT c.name\nFROM customers c\nJOIN legal_person lp ON c.id = lp.id_customers;"
     },
     "7": {
+      "id": "7",
+      "type": "oficial",
       "beecrowd": "2605",
       "title": "Executive Representatives",
       "moduleId": 3,
@@ -317,6 +666,8 @@
       "solutionSql": "SELECT p.name AS \"name (produto)\", pr.name AS \"name (fornecedor)\"\nFROM products p\nJOIN providers pr ON p.id_providers = pr.id\nWHERE p.id_categories = 6;"
     },
     "8": {
+      "id": "8",
+      "type": "oficial",
       "beecrowd": "2611",
       "title": "Action Movies",
       "moduleId": 3,
@@ -332,6 +683,8 @@
       "solutionSql": "SELECT m.id, m.name\nFROM movies m\nJOIN genres g ON m.id_genres = g.id\nWHERE g.description = 'Action';"
     },
     "9": {
+      "id": "9",
+      "type": "oficial",
       "beecrowd": "2617",
       "title": "Provider Ajax SA",
       "moduleId": 3,
@@ -347,6 +700,8 @@
       "solutionSql": "SELECT p.name AS \"name (produto)\", pr.name AS \"name (fornecedor)\"\nFROM products p\nJOIN providers pr ON p.id_providers = pr.id\nWHERE pr.name = 'Ajax SA';"
     },
     "10": {
+      "id": "10",
+      "type": "oficial",
       "beecrowd": "2609",
       "title": "Products by Categories",
       "moduleId": 4,
@@ -361,6 +716,8 @@
       "solutionSql": "SELECT c.name, SUM(p.amount) AS sum\nFROM products p\nJOIN categories c ON p.id_categories = c.id\nGROUP BY c.name;"
     },
     "11": {
+      "id": "11",
+      "type": "oficial",
       "beecrowd": "2614",
       "title": "September Rentals",
       "moduleId": 5,
@@ -376,6 +733,8 @@
       "solutionSql": "SELECT c.name, r.rentals_date\nFROM customers c\nJOIN rentals r ON c.id = r.id_customers\nWHERE r.rentals_date >= '2016-09-01' AND r.rentals_date <= '2016-09-30';"
     },
     "12": {
+      "id": "12",
+      "type": "oficial",
       "beecrowd": "2620",
       "title": "Orders in First Half",
       "moduleId": 5,
@@ -391,6 +750,8 @@
       "solutionSql": "SELECT c.name, o.id AS \"id (pedido)\"\nFROM customers c\nJOIN orders o ON c.id = o.id_customers\nWHERE o.orders_date >= '2016-01-01' AND o.orders_date <= '2016-06-30';"
     },
     "13": {
+      "id": "13",
+      "type": "oficial",
       "beecrowd": "2737",
       "title": "Lawyers",
       "moduleId": 6,
@@ -407,6 +768,8 @@
       "solutionSql": "(SELECT name, customers_number FROM lawyers ORDER BY customers_number DESC LIMIT 1)\nUNION ALL\n(SELECT name, customers_number FROM lawyers ORDER BY customers_number ASC LIMIT 1)\nUNION ALL\n(SELECT 'Average', CAST(AVG(customers_number) AS INTEGER) FROM lawyers);"
     },
     "14": {
+      "id": "14",
+      "type": "oficial",
       "beecrowd": "2993",
       "title": "Most Frequent Value",
       "moduleId": 6,
@@ -422,6 +785,8 @@
       "solutionSql": "SELECT amount AS most_frequent_value\nFROM value_table\nGROUP BY amount\nORDER BY COUNT(*) DESC\nLIMIT 1;"
     },
     "15": {
+      "id": "15",
+      "type": "oficial",
       "beecrowd": "2618",
       "title": "Imported Products",
       "moduleId": 3,
@@ -437,6 +802,8 @@
       "solutionSql": "SELECT p.name AS \"name (produto)\", pr.name AS \"name (fornecedor)\", c.name AS \"name (categoria)\"\nFROM products p\nJOIN providers pr ON p.id_providers = pr.id\nJOIN categories c ON p.id_categories = c.id\nWHERE pr.name = 'Sansul SA' AND c.name = 'Imported';"
     },
     "16": {
+      "id": "16",
+      "type": "oficial",
       "beecrowd": "2623",
       "title": "Categories with Various Products",
       "moduleId": 5,
@@ -452,6 +819,8 @@
       "solutionSql": "SELECT p.name AS \"name (produto)\", c.name AS \"name (categoria)\"\nFROM products p\nJOIN categories c ON p.id_categories = c.id\nWHERE p.amount > 100 AND p.id_categories IN (1, 2, 3, 6, 9)\nORDER BY p.id_categories ASC;"
     },
     "17": {
+      "id": "17",
+      "type": "oficial",
       "beecrowd": "Elaborado para este material",
       "title": "Categorias com Muitos Produtos",
       "moduleId": 4,
@@ -467,6 +836,8 @@
       "solutionSql": "SELECT c.name, COUNT(*) AS count\nFROM products p\nJOIN categories c ON p.id_categories = c.id\nGROUP BY c.name\nHAVING COUNT(*) > 2;"
     },
     "18": {
+      "id": "18",
+      "type": "oficial",
       "beecrowd": "2616",
       "title": "No Rental",
       "moduleId": 6,
@@ -481,6 +852,8 @@
       "solutionSql": "SELECT c.id, c.name\nFROM customers c\nLEFT JOIN locations l ON c.id = l.id_customers\nWHERE l.id IS NULL\nORDER BY c.id ASC;"
     },
     "19": {
+      "id": "19",
+      "type": "oficial",
       "beecrowd": "2988",
       "title": "Campeonato Cearense",
       "moduleId": 7,
@@ -497,6 +870,8 @@
       "solutionSql": "WITH matches_perspective AS (\n  SELECT team_1 AS team_id,\n         CASE WHEN team_1_goals > team_2_goals THEN 1 ELSE 0 END AS v,\n         CASE WHEN team_1_goals < team_2_goals THEN 1 ELSE 0 END AS d,\n         CASE WHEN team_1_goals = team_2_goals THEN 1 ELSE 0 END AS e\n  FROM matches\n  UNION ALL\n  SELECT team_2 AS team_id,\n         CASE WHEN team_2_goals > team_1_goals THEN 1 ELSE 0 END AS v,\n         CASE WHEN team_2_goals < team_1_goals THEN 1 ELSE 0 END AS d,\n         CASE WHEN team_2_goals = team_1_goals THEN 1 ELSE 0 END AS e\n  FROM matches\n)\nSELECT t.name,\n       COUNT(m.team_id) AS matches,\n       SUM(m.v) AS victories,\n       SUM(m.d) AS defeats,\n       SUM(m.e) AS draws,\n       (SUM(m.v) * 3 + SUM(m.e)) AS score\nFROM teams t\nJOIN matches_perspective m ON t.id = m.team_id\nGROUP BY t.name\nORDER BY score DESC;"
     },
     "20": {
+      "id": "20",
+      "type": "oficial",
       "beecrowd": "2991",
       "title": "Department Statistics",
       "moduleId": 7,
