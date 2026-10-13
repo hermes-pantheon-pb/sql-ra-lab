@@ -303,20 +303,18 @@ body.dark-theme {
 
 .modules-nav {
   flex: 1 1 0%;
-  overflow-y: scroll;
+  overflow-y: auto;
   overscroll-behavior: contain;
   min-height: 0;
   padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  display: block;
 }
 
 .modules-nav::-webkit-scrollbar {
-  width: 6px;
+  width: 7px;
 }
 .modules-nav::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.25);
 }
 .modules-nav::-webkit-scrollbar-thumb {
   background: #334155;
@@ -332,7 +330,8 @@ body.dark-theme {
   border-radius: var(--radius-md);
   background: var(--bg-card);
   overflow: hidden;
-  transition: var(--transition);
+  margin-bottom: 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .module-group.active {

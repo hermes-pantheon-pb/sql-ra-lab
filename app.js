@@ -282,13 +282,21 @@ async function selectExercise(exId) {
       activeGrp.classList.add("open");
     }
 
-    // Update active highlight and ensure scroll into view
+    // Update active highlight and ensure scroll into view inside modules-nav
     document.querySelectorAll(".exercise-nav-item").forEach((it) => it.classList.remove("active"));
     const activeNav = document.getElementById(`nav-ex-${currentExerciseId}`);
     if (activeNav) {
       activeNav.classList.add("active");
-      // Smooth scroll into visible sidebar area
-      activeNav.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      const navContainer = document.getElementById("modules-nav");
+      if (navContainer) {
+        const navRect = navContainer.getBoundingClientRect();
+        const itemRect = activeNav.getBoundingClientRect();
+        if (itemRect.top < navRect.top) {
+          navContainer.scrollTop -= (navRect.top - itemRect.top + 20);
+        } else if (itemRect.bottom > navRect.bottom) {
+          navContainer.scrollTop += (itemRect.bottom - navRect.bottom + 20);
+        }
+      }
     }
 
     document.querySelectorAll(".module-group").forEach((grp) => grp.classList.remove("active"));
