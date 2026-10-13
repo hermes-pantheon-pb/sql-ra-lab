@@ -80,6 +80,20 @@ function setupUIEventListeners() {
     copyToClipboard(code, "Expressão em Álgebra Relacional copiada!");
   });
 
+  // Sidebar Collapse / Expand All
+  const btnCollapseAll = document.getElementById("btn-collapse-all");
+  const btnExpandAll = document.getElementById("btn-expand-all");
+  if (btnCollapseAll) {
+    btnCollapseAll.addEventListener("click", () => {
+      document.querySelectorAll(".module-group").forEach((grp) => grp.classList.remove("open"));
+    });
+  }
+  if (btnExpandAll) {
+    btnExpandAll.addEventListener("click", () => {
+      document.querySelectorAll(".module-group").forEach((grp) => grp.classList.add("open"));
+    });
+  }
+
   // Modals
   const modalPipeline = document.getElementById("modal-pipeline");
   const modalSummary = document.getElementById("modal-summary");
@@ -114,9 +128,27 @@ function setupUIEventListeners() {
   // Search Filter in Sidebar
   document.getElementById("exercise-search").addEventListener("input", (e) => {
     const term = e.target.value.toLowerCase().trim();
-    document.querySelectorAll(".exercise-nav-item").forEach((item) => {
-      const text = item.innerText.toLowerCase();
-      item.style.display = text.includes(term) ? "flex" : "none";
+    document.querySelectorAll(".module-group").forEach((group) => {
+      let groupHasMatch = false;
+      group.querySelectorAll(".exercise-nav-item").forEach((item) => {
+        const text = item.innerText.toLowerCase();
+        const match = term === "" || text.includes(term);
+        item.style.display = match ? "flex" : "none";
+        if (match && term !== "") {
+          groupHasMatch = true;
+        }
+      });
+
+      if (term !== "") {
+        if (groupHasMatch) {
+          group.classList.add("open");
+          group.style.display = "block";
+        } else {
+          group.style.display = "none";
+        }
+      } else {
+        group.style.display = "block";
+      }
     });
   });
 
@@ -211,6 +243,7 @@ function createNavItem(exId, exMeta, isTreino) {
   item.className = "exercise-nav-item";
   if (isTreino) item.classList.add("item-treino");
   item.id = `nav-ex-${exId}`;
+  item.title = exMeta.title; // Tooltip on hover
   if (String(exId) === String(currentExerciseId)) item.classList.add("active");
 
   const isSolved = solvedExercises.has(String(exId));
@@ -224,7 +257,8 @@ function createNavItem(exId, exMeta, isTreino) {
     <span class="ex-status-icon">${isSolved ? "✅" : "⚪"}</span>
   `;
 
-  item.addEventListener("click", () => {
+  item.addEventListener("click", (e) => {
+    e.stopPropagation();
     selectExercise(String(exId));
   });
 
@@ -232,63 +266,79 @@ function createNavItem(exId, exMeta, isTreino) {
 }
 
 async function selectExercise(exId) {
-  currentExerciseId = String(exId);
-  const exMeta = curriculumData.exercises[currentExerciseId];
-  if (!exMeta) return;
+  try {
+    currentExerciseId = String(exId);
+    const exMeta = curriculumData.exercises[currentExerciseId];
+    if (!exMeta) {
+      console.warn("Exercício não encontrado:", exId);
+      return;
+    }
 
-  currentModuleId = exMeta.moduleId;
+    currentModuleId = exMeta.moduleId;
 
-  // Update active sidebar state
-  document.querySelectorAll(".exercise-nav-item").forEach((it) => it.classList.remove("active"));
-  const activeNav = document.getElementById(`nav-ex-${currentExerciseId}`);
-  if (activeNav) activeNav.classList.add("active");
+    // Ensure target module group is expanded
+    const activeGrp = document.getElementById(`mod-group-${currentModuleId}`);
+    if (activeGrp) {
+      activeGrp.classList.add("open");
+    }
 
-  document.querySelectorAll(".module-group").forEach((grp) => grp.classList.remove("active"));
-  const activeGrp = document.getElementById(`mod-group-${currentModuleId}`);
-  if (activeGrp) {
-    activeGrp.classList.add("active", "open");
+    // Update active highlight and ensure scroll into view
+    document.querySelectorAll(".exercise-nav-item").forEach((it) => it.classList.remove("active"));
+    const activeNav = document.getElementById(`nav-ex-${currentExerciseId}`);
+    if (activeNav) {
+      activeNav.classList.add("active");
+      // Smooth scroll into visible sidebar area
+      activeNav.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+
+    document.querySelectorAll(".module-group").forEach((grp) => grp.classList.remove("active"));
+    if (activeGrp) {
+      activeGrp.classList.add("active");
+    }
+
+    // Update Header Badge
+    const isTreino = exMeta.type === "treino";
+    const headerLabel = isTreino
+      ? `${exId}: ${exMeta.title} (${exMeta.badgeTag})`
+      : `Ex ${exId}: ${exMeta.title} (Beecrowd ${exMeta.beecrowd || ""})`;
+    document.getElementById("header-ex-label").innerText = headerLabel;
+
+    // Render Concepts Panel for this Module
+    renderModuleConcepts(currentModuleId);
+
+    // Render Practice Panel for this Exercise
+    document.getElementById("ex-number-badge").innerText = isTreino ? `Treino ${exId}` : `Exercício ${exId}`;
+    document.getElementById("ex-number-badge").style.background = isTreino ? "var(--accent-purple)" : "var(--accent-blue)";
+    document.getElementById("ex-beecrowd-tag").innerText = isTreino ? exMeta.badgeTag : `Beecrowd ${exMeta.beecrowd}`;
+    document.getElementById("ex-diff-badge").innerText = exMeta.difficulty;
+    document.getElementById("ex-title").innerText = exMeta.title;
+    document.getElementById("ex-statement").innerText = exMeta.statement;
+    document.getElementById("ex-intuition-text").innerText = exMeta.pedagogicalIntuition;
+
+    // Load editor draft
+    const savedDraft = localStorage.getItem(`sql_draft_ex_${currentExerciseId}`);
+    const editor = document.getElementById("sql-editor");
+    editor.value = savedDraft ? savedDraft : `-- ${isTreino ? "Treino" : "Exercício"} ${exId}: ${exMeta.title}\n-- Escreva sua consulta SQL e pressione Ctrl + Enter:\n`;
+
+    // Hide validation banner & clear previous results
+    document.getElementById("validation-banner").style.display = "none";
+    document.getElementById("result-table-container").innerHTML = `
+      <div class="empty-state">
+        <span class="empty-icon">⚡</span>
+        <p>Clique em <strong>Executar</strong> ou <strong>Validar</strong> para rodar sua consulta.</p>
+      </div>
+    `;
+    document.getElementById("stats-row-count").innerText = "0 linhas retornadas";
+    document.getElementById("stats-time").innerText = "0 ms";
+
+    // Render RA Panel
+    renderRAPanel(exMeta);
+
+    // Fetch and render Exercise Details (Schema and Expected Output)
+    await fetchExerciseData(currentExerciseId);
+  } catch (err) {
+    console.error("Erro ao selecionar exercício:", err);
   }
-
-  // Update Header Badge
-  const isTreino = exMeta.type === "treino";
-  const headerLabel = isTreino
-    ? `${exId}: ${exMeta.title} (${exMeta.badgeTag})`
-    : `Ex ${exId}: ${exMeta.title} (Beecrowd ${exMeta.beecrowd || ""})`;
-  document.getElementById("header-ex-label").innerText = headerLabel;
-
-  // Render Concepts Panel for this Module
-  renderModuleConcepts(currentModuleId);
-
-  // Render Practice Panel for this Exercise
-  document.getElementById("ex-number-badge").innerText = isTreino ? `Treino ${exId}` : `Exercício ${exId}`;
-  document.getElementById("ex-number-badge").style.background = isTreino ? "var(--accent-purple)" : "var(--accent-blue)";
-  document.getElementById("ex-beecrowd-tag").innerText = isTreino ? exMeta.badgeTag : `Beecrowd ${exMeta.beecrowd}`;
-  document.getElementById("ex-diff-badge").innerText = exMeta.difficulty;
-  document.getElementById("ex-title").innerText = exMeta.title;
-  document.getElementById("ex-statement").innerText = exMeta.statement;
-  document.getElementById("ex-intuition-text").innerText = exMeta.pedagogicalIntuition;
-
-  // Load editor draft
-  const savedDraft = localStorage.getItem(`sql_draft_ex_${currentExerciseId}`);
-  const editor = document.getElementById("sql-editor");
-  editor.value = savedDraft ? savedDraft : `-- ${isTreino ? "Treino" : "Exercício"} ${exId}: ${exMeta.title}\n-- Escreva sua consulta SQL e pressione Ctrl + Enter:\n`;
-
-  // Hide validation banner & clear previous results
-  document.getElementById("validation-banner").style.display = "none";
-  document.getElementById("result-table-container").innerHTML = `
-    <div class="empty-state">
-      <span class="empty-icon">⚡</span>
-      <p>Clique em <strong>Executar</strong> ou <strong>Validar</strong> para rodar sua consulta.</p>
-    </div>
-  `;
-  document.getElementById("stats-row-count").innerText = "0 linhas retornadas";
-  document.getElementById("stats-time").innerText = "0 ms";
-
-  // Render RA Panel
-  renderRAPanel(exMeta);
-
-  // Fetch and render Exercise Details (Schema and Expected Output)
-  await fetchExerciseData(currentExerciseId);
 }
 
 function renderModuleConcepts(moduleId) {
@@ -483,11 +533,16 @@ async function validateSQL() {
       bannerDesc.innerText = "Sua consulta SQL produziu exatamente a saída solicitada pelo enunciado e pelo Beecrowd!";
       showToast(`🎉 Item ${currentExerciseId} Resolvido com Sucesso!`);
 
-      // Mark as solved
+      // Mark as solved without destroying sidebar DOM or resetting scroll
       solvedExercises.add(String(currentExerciseId));
       localStorage.setItem("sql_ra_solved", JSON.stringify([...solvedExercises]));
       updateProgressUI();
-      renderSidebar();
+
+      const activeNavItem = document.getElementById(`nav-ex-${currentExerciseId}`);
+      if (activeNavItem) {
+        const icon = activeNavItem.querySelector(".ex-status-icon");
+        if (icon) icon.innerText = "✅";
+      }
     } else {
       banner.className = "validation-banner error";
       bannerIcon.innerText = "⚠️";
@@ -557,7 +612,6 @@ function revealSolution() {
 
 function updateProgressUI() {
   const count = solvedExercises.size;
-  const total = 20 + 20; // 20 oficiais + treinos
   const pct = Math.min(100, Math.round((count / 30) * 100));
   document.getElementById("progress-text").innerText = `${count} Resolvidos`;
   document.getElementById("progress-bar-fill").style.width = `${pct}%`;
